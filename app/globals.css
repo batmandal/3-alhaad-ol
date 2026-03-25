@@ -1,26 +1,167 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --radius: 0.625rem;
+  --background: 220 14% 96%;
+  --foreground: 0 0% 3.9%;
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 3.9%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 3.9%;
+  --primary: 222 47% 20%;
+  --primary-foreground: 0 0% 98%;
+  --secondary: 0 0% 96.1%;
+  --secondary-foreground: 0 0% 9%;
+  --muted: 0 0% 96.1%;
+  --muted-foreground: 0 0% 45.1%;
+  --accent: 330 85% 95%;
+  --accent-foreground: 330 30% 25%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 0 0% 89.8%;
+  --input: 0 0% 89.8%;
+  --ring: 0 0% 3.9%;
+  /* Системийн шар */
+  --system-yellow: 45 96% 52%;
+  --system-yellow-hover: 43 96% 46%;
+  /* Улаан шар / orange-amber (хайлтын товч г.м.) */
+  --system-orange: 28 92% 54%;
+  --system-orange-hover: 24 94% 44%;
+  --system-orange-active: 22 90% 38%;
+  /* Системийн ногоон (Олсон зар товчтой ижил) */
+  --system-green: 142 71% 45%;
+  --system-green-hover: 142 76% 36%;
+  --system-green-active: 142 72% 29%;
+}
+
+.dark {
+  --background: 0 0% 3.9%;
+  --foreground: 0 0% 98%;
+  --card: 0 0% 3.9%;
+  --card-foreground: 0 0% 98%;
+  --popover: 0 0% 3.9%;
+  --popover-foreground: 0 0% 98%;
+  --primary: 0 0% 98%;
+  --primary-foreground: 0 0% 9%;
+  --secondary: 0 0% 14.9%;
+  --secondary-foreground: 0 0% 98%;
+  --muted: 0 0% 14.9%;
+  --muted-foreground: 0 0% 63.9%;
+  --accent: 0 0% 14.9%;
+  --accent-foreground: 0 0% 98%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 0 0% 14.9%;
+  --input: 0 0% 14.9%;
+  --ring: 0 0% 83.1%;
+  --system-yellow: 48 100% 55%;
+  --system-yellow-hover: 48 100% 48%;
+  --system-orange: 32 95% 58%;
+  --system-orange-hover: 28 92% 50%;
+  --system-orange-active: 24 90% 42%;
+  --system-green: 142 70% 58%;
+  --system-green-hover: 142 71% 45%;
+  --system-green-active: 142 76% 36%;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  --color-system-yellow: hsl(var(--system-yellow));
+  --color-system-yellow-hover: hsl(var(--system-yellow-hover));
+  --color-system-orange: hsl(var(--system-orange));
+  --color-system-orange-hover: hsl(var(--system-orange-hover));
+  --color-system-orange-active: hsl(var(--system-orange-active));
+  --color-system-green: hsl(var(--system-green));
+  --color-system-green-hover: hsl(var(--system-green-hover));
+  --color-system-green-active: hsl(var(--system-green-active));
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+body {
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: var(--font-sans), system-ui, sans-serif;
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Feed carousel: 2 зар дараалан гарч ирэх + GPU smooth transform */
+@keyframes feed-card-from-right {
+  from {
+    opacity: 0;
+    transform: translate3d(1.5rem, 0, 0) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+@keyframes feed-card-from-left {
+  from {
+    opacity: 0;
+    transform: translate3d(-1.5rem, 0, 0) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+.animate-feed-from-right {
+  animation: feed-card-from-right 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.animate-feed-from-left {
+  animation: feed-card-from-left 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.animate-feed-stagger-2 {
+  animation-delay: 0.18s;
+}
+
+/* Swiper — center + coverflow (feed carousel) */
+.feed-posts-swiper {
+  overflow: visible !important;
+  padding-top: 0.75rem;
+  padding-bottom: 2.75rem;
+}
+.feed-posts-swiper .swiper-wrapper {
+  align-items: stretch;
+}
+.feed-posts-swiper .swiper-slide {
+  height: auto;
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+.feed-posts-swiper .swiper-pagination {
+  bottom: 0 !important;
+}
+.feed-posts-swiper .swiper-pagination-bullet {
+  background: hsl(var(--foreground) / 0.25);
+  opacity: 1;
+  transition: transform 0.25s ease, background-color 0.25s ease;
+}
+.feed-posts-swiper .swiper-pagination-bullet-active {
+  background: hsl(var(--primary));
+  transform: scale(1.15);
 }
