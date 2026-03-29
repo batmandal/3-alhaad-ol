@@ -2,8 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AppStoreProvider } from "@/lib/store/app-store";
-import { SiteHeader } from "@/components/shell/site-header";
-import { SiteFooter } from "@/components/shell/site-footer";
+import { SiteShell } from "@/components/shell/site-shell";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -32,9 +31,7 @@ export default function RootLayout({
     >
       <body className="flex min-h-full flex-col bg-background text-foreground">
         <AppStoreProvider>
-          <SiteHeader />
-          <main className="flex-1">{children}</main>
-          <SiteFooter />
+          <SiteShell>{children}</SiteShell>
         </AppStoreProvider>
       </body>
     </html>
