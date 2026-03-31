@@ -1,5 +1,6 @@
 export type PostType = "lost" | "found"
 export type PostStatus = "draft" | "pending_payment" | "published"
+export type ClaimStatus = "pending" | "approved" | "rejected"
 
 export interface Post {
   id: string
@@ -48,4 +49,17 @@ export interface WithdrawalRequest {
 export interface RewardEligibility {
   postId: string
   amount: number
+}
+export interface Claim {
+  id: string
+  postId: string
+  claimantId: string /** Олсон хүн эсвэл эд зүйлийн эзэмшигч */
+  claimantName: string
+  claimantEmail: string
+  answers: string[] /** Баталгаажуулалтын асуултуудын хариултууд */
+  status: ClaimStatus
+  createdAt: string
+  reviewedAt?: string
+  reviewedBy?: string /** Admin-ийн ID */
+  notes?: string
 }
