@@ -130,7 +130,7 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
   const verifyFoundAnswer = React.useCallback(
     (postId: string, answer: string) => {
       const post = posts.find((p) => p.id === postId)
-      if (!post || post.type !== "found") {
+      if (!post) {
         return { ok: false, message: "Зар олдсонгүй." }
       }
       const expected = post.correctAnswer

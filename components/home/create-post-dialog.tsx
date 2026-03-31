@@ -139,11 +139,9 @@ export function CreatePostDialog({
       setError("Зар нийтлэхийн тулд эхлээд нэвтэрнэ үү.")
       return
     }
-    if (type === "found") {
-      if (!verificationQuestion.trim() || !correctAnswer.trim()) {
-        setError("Олсон зарт баталгаажуулах асуулт, зөв хариулт заавал.")
-        return
-      }
+    if (!verificationQuestion.trim() || !correctAnswer.trim()) {
+      setError("Баталгаажуулах асуулт, зөв хариулт заавал.");
+      return
     }
 
     const rewardNum =
@@ -170,9 +168,8 @@ export function CreatePostDialog({
       rewardAmount:
         type === "lost" && rewardNum && rewardNum > 0 ? rewardNum : undefined,
       fbShare: fbShare || undefined,
-      verificationQuestion:
-        type === "found" ? verificationQuestion.trim() : undefined,
-      correctAnswer: type === "found" ? correctAnswer.trim() : undefined,
+      verificationQuestion: verificationQuestion.trim(),
+      correctAnswer: correctAnswer.trim(),
       finderRewardAmount:
         type === "found" && finderRewardNum && finderRewardNum > 0
           ? finderRewardNum
@@ -306,8 +303,7 @@ export function CreatePostDialog({
               </div>
 
               {/* Verification Section */}
-              {type === "found" && (
-                <div className="space-y-4 rounded-2xl border border-teal-200/70 bg-gradient-to-br from-teal-50/80 to-emerald-50/40 p-4 shadow-sm ring-1 ring-teal-500/10 dark:border-teal-900/50 dark:from-teal-950/30 dark:to-emerald-950/20 dark:ring-teal-500/5">
+              <div className="space-y-4 rounded-2xl border border-teal-200/70 bg-gradient-to-br from-teal-50/80 to-emerald-50/40 p-4 shadow-sm ring-1 ring-teal-500/10 dark:border-teal-900/50 dark:from-teal-950/30 dark:to-emerald-950/20 dark:ring-teal-500/5">
                   <div className="flex items-start gap-3">
                     <div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-teal-400 to-emerald-600 text-white shadow-md shadow-teal-500/25">
                       <HelpCircle className="size-5" />
@@ -317,7 +313,7 @@ export function CreatePostDialog({
                         Баталгаажуулах асуулт *
                       </h4>
                       <p className="text-xs leading-relaxed text-muted-foreground">
-                        Эд зүйлийн жинхэнэ эзнийг тогтоох асуулт (заавал)
+                        {type === "found" ? "Эзнийг" : "Олсон хүнийг"} тогтоох асуулт (заавал)
                       </p>
                     </div>
                   </div>
@@ -349,7 +345,6 @@ export function CreatePostDialog({
                     </div>
                   </div>
                 </div>
-              )}
 
               {/* Reward Section */}
               <div className="space-y-4 rounded-2xl border border-amber-200/60 bg-gradient-to-br from-amber-50/50 to-orange-50/30 p-4 shadow-sm ring-1 ring-amber-500/10 transition-all dark:border-amber-900/40 dark:from-amber-950/25 dark:to-orange-950/15 dark:ring-amber-500/5">
