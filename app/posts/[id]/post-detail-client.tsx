@@ -62,7 +62,6 @@ export function PostDetailClient({ id }: { id: string }) {
   const myClaim = myClaims.find((c) => c.postId === post.id)
 
   // Асуултуудыг авах
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const questions: VerificationQuestion[] = post.verificationQuestions?.length
     ? post.verificationQuestions
     : post.verificationQuestion && post.correctAnswer
@@ -72,11 +71,17 @@ export function PostDetailClient({ id }: { id: string }) {
   const hasNewQuestions = (post.verificationQuestions?.length ?? 0) > 0
   const hasLegacyQuestion = !hasNewQuestions && !!post.verificationQuestion
 
-  // Answers init
+  // Answers init — post (id) өөрчлөгдөхөд л дахин тохируулна.
+  // questions-г dependency болгохгүй: render бүрт шинэ array үүсэж infinite loop гарна.
   // eslint-disable-next-line react-hooks/rules-of-hooks
   React.useEffect(() => {
-    setAnswers(questions.map(() => ""))
-  }, [post.id, questions])
+    const found = posts.find((p) => p.id === id)
+    if (!found) return
+    const qCount = found.verificationQuestions?.length
+      ?? (found.verificationQuestion ? 1 : 0)
+    setAnswers(Array(qCount).fill(""))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id])
 
   function handleSubmitClaim(e: React.FormEvent) {
     e.preventDefault()
