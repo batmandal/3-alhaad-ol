@@ -24,12 +24,20 @@ export function ProfilePageClient() {
     posts,
     rewardEligibilities,
     submitWithdrawal,
+    updateCurrentUserProfile,
   } = useAppStore()
 
   const [withdrawPostId, setWithdrawPostId] = React.useState<string | null>(null)
   const [withdrawAmount, setWithdrawAmount] = React.useState(0)
   const [bankName, setBankName] = React.useState("")
   const [accountNumber, setAccountNumber] = React.useState("")
+  const [isEditing, setIsEditing] = React.useState(false)
+  const [name, setName] = React.useState("")
+  const [phone, setPhone] = React.useState("")
+  const [email, setEmail] = React.useState("")
+  const [sisiId, setSisiId] = React.useState("")
+  const [profileError, setProfileError] = React.useState<string | null>(null)
+  const [profileOk, setProfileOk] = React.useState<string | null>(null)
 
   if (!currentUser) {
     return (
@@ -44,6 +52,13 @@ export function ProfilePageClient() {
 
   const mine = posts.filter((p) => p.authorId === currentUser.id)
   const eligible = rewardEligibilities[currentUser.id] ?? []
+
+  React.useEffect(() => {
+    setName(currentUser.name)
+    setPhone(currentUser.phone)
+    setEmail(currentUser.email)
+    setSisiId(currentUser.sisiId)
+  }, [currentUser])
 
   function openWithdraw(postId: string, amount: number) {
     setWithdrawPostId(postId)
@@ -64,6 +79,30 @@ export function ProfilePageClient() {
     setWithdrawPostId(null)
   }
 
+  function handleProfileSave(e: React.FormEvent) {
+    e.preventDefault()
+    setProfileError(null)
+    setProfileOk(null)
+    const r = updateCurrentUserProfile({ name, phone, email, sisiId })
+    if (!r.ok) {
+      setProfileError(r.message ?? "Профайл шинэчлэхэд алдаа гарлаа.")
+      return
+    }
+    setIsEditing(false)
+    setProfileOk("Профайл амжилттай шинэчлэгдлээ.")
+  }
+
+  function handleProfileCancel() {
+    if (!currentUser) return
+    setName(currentUser.name)
+    setPhone(currentUser.phone)
+    setEmail(currentUser.email)
+    setSisiId(currentUser.sisiId)
+    setProfileError(null)
+    setProfileOk(null)
+    setIsEditing(false)
+  }
+
   return (
     <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
       <Link
@@ -77,6 +116,84 @@ export function ProfilePageClient() {
       <p className="mt-1 text-muted-foreground">
         {currentUser.name} · SISI {currentUser.sisiId}
       </p>
+
+      <Card className="mt-6 border-border/60">
+        <CardHeader className="flex flex-row items-center justify-between gap-3">
+          <CardTitle className="text-lg">Хувийн мэдээлэл</CardTitle>
+          {!isEditing ? (
+            <Button size="sm" variant="outline" onClick={() => setIsEditing(true)}>
+              Засах
+            </Button>
+          ) : null}
+        </CardHeader>
+        <CardContent>
+          <form className="grid gap-4" onSubmit={handleProfileSave}>
+            <div className="grid gap-2">
+              <Label htmlFor="p-name">Нэр</Label>
+              <Input
+                id="p-name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                disabled={!isEditing}
+                required
+              />
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-2">
+                <Label htmlFor="p-phone">Утас</Label>
+                <Input
+                  id="p-phone"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  disabled={!isEditing}
+                  required
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="p-sisi">SISI ID</Label>
+                <Input
+                  id="p-sisi"
+                  value={sisiId}
+                  onChange={(e) => setSisiId(e.target.value)}
+                  disabled={!isEditing}
+                  required
+                />
+              </div>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="p-email">Имэйл</Label>
+              <Input
+                id="p-email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={!isEditing}
+                required
+              />
+            </div>
+
+            {profileError && (
+              <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                {profileError}
+              </p>
+            )}
+            {profileOk && (
+              <p className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+                {profileOk}
+              </p>
+            )}
+
+            {isEditing ? (
+              <div className="flex flex-wrap justify-end gap-2 pt-1">
+                <Button type="button" variant="outline" onClick={handleProfileCancel}>
+                  Болих
+                </Button>
+                <Button type="submit">Хадгалах</Button>
+              </div>
+            ) : null}
+          </form>
+        </CardContent>
+      </Card>
 
       {eligible.length > 0 && (
         <Card className="mt-8 border-emerald-200 bg-emerald-50/40">

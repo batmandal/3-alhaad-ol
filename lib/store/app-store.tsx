@@ -45,6 +45,12 @@ interface AppContextValue extends AppState {
   }) => void
   completeWithdrawal: (id: string) => void
   getUserById: (id: string) => User | undefined
+  updateCurrentUserProfile: (payload: {
+    name: string
+    phone: string
+    email: string
+    sisiId: string
+  }) => { ok: boolean; message?: string }
 }
 
 const AppContext = React.createContext<AppContextValue | null>(null)
@@ -193,6 +199,53 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
     )
   }, [])
 
+  const updateCurrentUserProfile = React.useCallback(
+    (payload: { name: string; phone: string; email: string; sisiId: string }) => {
+      if (!currentUser) {
+        return { ok: false, message: "Нэвтрээгүй байна." }
+      }
+
+      const next = {
+        name: payload.name.trim(),
+        phone: payload.phone.trim(),
+        email: payload.email.trim().toLowerCase(),
+        sisiId: payload.sisiId.trim(),
+      }
+
+      if (!next.name || !next.phone || !next.email || !next.sisiId) {
+        return { ok: false, message: "Бүх талбарыг бөглөнө үү." }
+      }
+
+      const duplicatedPhone = users.some(
+        (u) => u.id !== currentUser.id && u.phone === next.phone
+      )
+      if (duplicatedPhone) {
+        return { ok: false, message: "Энэ утасны дугаар бүртгэлтэй байна." }
+      }
+
+      const duplicatedEmail = users.some(
+        (u) => u.id !== currentUser.id && u.email.toLowerCase() === next.email
+      )
+      if (duplicatedEmail) {
+        return { ok: false, message: "Энэ имэйл бүртгэлтэй байна." }
+      }
+
+      const duplicatedSisi = users.some(
+        (u) => u.id !== currentUser.id && u.sisiId === next.sisiId
+      )
+      if (duplicatedSisi) {
+        return { ok: false, message: "Энэ SISI ID бүртгэлтэй байна." }
+      }
+
+      setUsers((prev) =>
+        prev.map((u) => (u.id === currentUser.id ? { ...u, ...next } : u))
+      )
+      setCurrentUser((prev) => (prev ? { ...prev, ...next } : prev))
+      return { ok: true }
+    },
+    [currentUser, users]
+  )
+
   const getUserById = React.useCallback(
     (id: string) => users.find((u) => u.id === id),
     [users]
@@ -214,6 +267,7 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
       submitWithdrawal,
       completeWithdrawal,
       getUserById,
+      updateCurrentUserProfile,
     }),
     [
       users,
@@ -229,6 +283,7 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
       submitWithdrawal,
       completeWithdrawal,
       getUserById,
+      updateCurrentUserProfile,
     ]
   )
 

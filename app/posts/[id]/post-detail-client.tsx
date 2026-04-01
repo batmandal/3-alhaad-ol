@@ -43,9 +43,7 @@ export function PostDetailClient({ id }: { id: string }) {
   }
 
   const isAuthor = currentUser?.id === post.authorId
-  const showContact =
-    author &&
-    (isAuthor || !post.verificationQuestion || verified)
+  const showContact = author && (isAuthor || verified)
 
   return (
     <article className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
@@ -93,7 +91,7 @@ export function PostDetailClient({ id }: { id: string }) {
         </p>
       ) : null}
 
-      {!isAuthor && post.verificationQuestion && !verified && (
+      {!isAuthor && !verified && (
         <Card className="mt-10 overflow-hidden border-teal-100 bg-gradient-to-br from-white to-teal-50/30 shadow-md transition-all dark:border-teal-900/40 dark:from-background dark:to-teal-950/20">
           <CardHeader className="border-b border-teal-100/50 bg-teal-50/50 py-4 dark:border-teal-900/30 dark:bg-teal-950/30">
             <CardTitle className="text-lg font-bold text-teal-900 dark:text-teal-400">
@@ -106,8 +104,14 @@ export function PostDetailClient({ id }: { id: string }) {
                 {post.type === "found" ? "Эзэмшигч" : "Олсон хүн"} болохыгоо баталгаажуулж, холбоо барих мэдээллийг харахын тулд доорх асуултад зөв хариулна уу.
               </p>
               <p className="rounded-xl bg-muted/50 p-4 text-base font-semibold text-foreground ring-1 ring-black/[0.03]">
-                {post.verificationQuestion}
+                {post.verificationQuestion?.trim() ||
+                  "Энэ зарт баталгаажуулах асуулт тохируулагдаагүй байна. Зарын эзэнтэй админ-аар холбогдоно уу."}
               </p>
+              {post.correctAnswer?.trim() && (
+                <p className="rounded-lg border border-emerald-200/70 bg-emerald-50/70 px-3 py-2 text-sm text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-300">
+                  Mock зөв хариулт: <span className="font-semibold">{post.correctAnswer}</span>
+                </p>
+              )}
             </div>
 
             <form className="flex flex-col gap-3 sm:flex-row sm:items-end" onSubmit={handleVerify}>
@@ -124,7 +128,11 @@ export function PostDetailClient({ id }: { id: string }) {
                   required
                 />
               </div>
-              <Button type="submit" className="h-11 rounded-xl bg-teal-600 px-8 font-bold hover:bg-teal-700">
+              <Button
+                type="submit"
+                className="h-11 rounded-xl bg-teal-600 px-8 font-bold hover:bg-teal-700"
+                disabled={!post.verificationQuestion?.trim()}
+              >
                 Баталгаажуулах
               </Button>
             </form>
