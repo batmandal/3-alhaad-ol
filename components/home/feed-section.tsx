@@ -212,7 +212,7 @@ function PostsCarousel({
         )}
         disabled={!canNavigate || !canNext}
         onClick={() => swiper?.slideNext()}
-        aria-label="Дараагийн зар"
+        aria-label="Дараагийн  зар"
       >
         <ChevronRight className="size-7" />
       </Button>

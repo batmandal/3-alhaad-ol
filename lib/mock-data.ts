@@ -20,7 +20,7 @@ export const MOCK_LOCATIONS = [
   "8-р байр",
   "Хууль зүйн сургууль",
   "Багш оюутан хөгжлийн төв",
-] as const
+] as const;
 
 export const INITIAL_USERS: User[] = [
   {
@@ -90,7 +90,7 @@ export const INITIAL_POSTS: Post[] = [
     type: "found",
     title: "Түрийвч олдсон",
     description:
-      "2-р байрын орцонд хар торгоны түрийвч. Баталгаажуулалт шаардлагатай.",
+      "2-р байрын орцонд хар торгоны түрийвч. Баталгаажуулалт шаардлагатай.  ",
     category: "Үнэт эдлэл",
     location: "2-р байр",
     date: "2026-03-22",
