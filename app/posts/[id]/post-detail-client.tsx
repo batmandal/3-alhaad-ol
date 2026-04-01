@@ -14,12 +14,16 @@ import type { Claim, VerificationQuestion } from "@/lib/types"
 import { CheckCircle, XCircle, Clock, Phone, Mail, User, AlertCircle } from "lucide-react"
 
 export function PostDetailClient({ id }: { id: string }) {
+<<<<<<< HEAD
+  const { posts, verifyFoundAnswer, getUserById, currentUser } = useAppStore()
+=======
   const {
     posts, currentUser, getUserById,
     submitClaim, approveClaim, rejectClaim, getClaimsForPost, getMyClaims,
     verifyFoundAnswer,
   } = useAppStore()
 
+>>>>>>> d763aebc7df36e8675f386ca84342fa128d94860
   const post = posts.find((p) => p.id === id)
 
   // Claim form state
@@ -93,6 +97,10 @@ export function PostDetailClient({ id }: { id: string }) {
     setClaimMsg("Таны хүсэлт илгээгдлээ. Зарын эзэн хянаж шийдвэрлэнэ.")
   }
 
+<<<<<<< HEAD
+  const isAuthor = currentUser?.id === post.authorId
+  const showContact = author && (isAuthor || verified)
+=======
   function handleLegacyVerify(e: React.FormEvent) {
     e.preventDefault()
     setLegacyMsg(null)
@@ -105,6 +113,7 @@ export function PostDetailClient({ id }: { id: string }) {
   const approvedClaim = postClaims.find((c) => c.status === "approved")
   const approvedClaimant = approvedClaim ? getUserById(approvedClaim.claimantId) : null
   const myApprovedClaim = myClaim?.status === "approved"
+>>>>>>> d763aebc7df36e8675f386ca84342fa128d94860
 
   return (
     <article className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
@@ -140,6 +149,57 @@ export function PostDetailClient({ id }: { id: string }) {
         </div>
       ) : null}
 
+<<<<<<< HEAD
+      {!isAuthor && !verified && (
+        <Card className="mt-10 overflow-hidden border-teal-100 bg-gradient-to-br from-white to-teal-50/30 shadow-md transition-all dark:border-teal-900/40 dark:from-background dark:to-teal-950/20">
+          <CardHeader className="border-b border-teal-100/50 bg-teal-50/50 py-4 dark:border-teal-900/30 dark:bg-teal-950/30">
+            <CardTitle className="text-lg font-bold text-teal-900 dark:text-teal-400">
+              Холбоо барих мэдээлэл харах
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-5 p-6">
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-muted-foreground/80">
+                {post.type === "found" ? "Эзэмшигч" : "Олсон хүн"} болохыгоо баталгаажуулж, холбоо барих мэдээллийг харахын тулд доорх асуултад зөв хариулна уу.
+              </p>
+              <p className="rounded-xl bg-muted/50 p-4 text-base font-semibold text-foreground ring-1 ring-black/[0.03]">
+                {post.verificationQuestion?.trim() ||
+                  "Энэ зарт баталгаажуулах асуулт тохируулагдаагүй байна. Зарын эзэнтэй админ-аар холбогдоно уу."}
+              </p>
+              {post.correctAnswer?.trim() && (
+                <p className="rounded-lg border border-emerald-200/70 bg-emerald-50/70 px-3 py-2 text-sm text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-300">
+                  Mock зөв хариулт: <span className="font-semibold">{post.correctAnswer}</span>
+                </p>
+              )}
+            </div>
+
+            <form className="flex flex-col gap-3 sm:flex-row sm:items-end" onSubmit={handleVerify}>
+              <div className="grid flex-1 gap-2.5">
+                <Label htmlFor="va" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  Таны хариулт
+                </Label>
+                <Input
+                  id="va"
+                  value={answer}
+                  onChange={(e) => setAnswer(e.target.value)}
+                  placeholder="Хариултаа энд бичнэ үү..."
+                  className="h-11 rounded-xl border-border/60 bg-background/50 focus:ring-teal-500/20"
+                  required
+                />
+              </div>
+              <Button
+                type="submit"
+                className="h-11 rounded-xl bg-teal-600 px-8 font-bold hover:bg-teal-700"
+                disabled={!post.verificationQuestion?.trim()}
+              >
+                Баталгаажуулах
+              </Button>
+            </form>
+            {msg && (
+              <p className="animate-in fade-in slide-in-from-top-1 text-sm font-medium text-rose-500">
+                {msg}
+              </p>
+=======
       {/* ══════════════════════════════════════════
           OWNER VIEW: Pending claims management
       ══════════════════════════════════════════ */}
@@ -167,11 +227,21 @@ export function PostDetailClient({ id }: { id: string }) {
             <ContactRow icon={<Mail className="size-4" />} label="Имэйл" value={approvedClaimant.email} href={`mailto:${approvedClaimant.email}`} />
             {approvedClaimant.facebook && (
               <ContactRow icon={<span className="text-xs font-bold">f</span>} label="Facebook" value={approvedClaimant.facebook} />
+>>>>>>> d763aebc7df36e8675f386ca84342fa128d94860
             )}
           </CardContent>
         </Card>
       )}
 
+<<<<<<< HEAD
+      {showContact && (
+        <ContactCard
+          phone={author.phone}
+          sisiId={author.sisiId}
+          email={author.email}
+          verified={!isAuthor && !!post.verificationQuestion && verified}
+        />
+=======
       {/* ══════════════════════════════════════════
           NON-OWNER: Claim/Verify section
       ══════════════════════════════════════════ */}
@@ -320,11 +390,24 @@ export function PostDetailClient({ id }: { id: string }) {
             <ContactCard phone={author.phone} sisiId={author.sisiId} email={author.email} />
           )}
         </>
+>>>>>>> d763aebc7df36e8675f386ca84342fa128d94860
       )}
     </article>
   )
 }
 
+<<<<<<< HEAD
+function ContactCard({
+  phone,
+  sisiId,
+  email,
+  verified,
+}: {
+  phone: string
+  sisiId: string
+  email: string
+  verified?: boolean
+=======
 // ── Owner claims panel ────────────────────────────────
 function OwnerClaimsPanel({
   claims,
@@ -334,6 +417,7 @@ function OwnerClaimsPanel({
   claims: Claim[]
   onApprove: (id: string) => void
   onReject: (id: string) => void
+>>>>>>> d763aebc7df36e8675f386ca84342fa128d94860
 }) {
   const pending = claims.filter((c) => c.status === "pending")
   const all = claims
@@ -471,14 +555,42 @@ function ContactRow({ icon, label, value, href }: { icon: React.ReactNode; label
 
 function ContactCard({ phone, sisiId, email }: { phone: string; sisiId: string; email: string }) {
   return (
-    <Card className="mt-6 border-emerald-200 bg-emerald-50/50">
-      <CardHeader>
-        <CardTitle className="text-emerald-900">Холбоо барих</CardTitle>
+    <Card className={cn("mt-10 overflow-hidden transition-all", verified ? "animate-in slide-in-from-bottom-2 fade-in duration-300 border-emerald-200 bg-gradient-to-br from-white to-emerald-50/20 shadow-md dark:border-emerald-900/40 dark:from-background dark:to-emerald-950/20" : "border-border/50")}>
+      <CardHeader className={cn(verified ? "border-b border-emerald-100/50 bg-emerald-50/50 py-4 dark:border-emerald-900/30 dark:bg-emerald-950/30" : "")}>
+        <div className="flex items-center gap-3">
+          <CardTitle className={cn(verified ? "text-lg font-bold text-emerald-900 dark:text-emerald-400" : "")}>Холбоо барих</CardTitle>
+          {verified && (
+            <Badge variant="outline" className="border-emerald-300 bg-emerald-100/50 px-2 py-0.5 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-400">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="mr-1 lucide lucide-check"><path d="M20 6L9 17l-5-5"/></svg>
+              Баталгаажсан
+            </Badge>
+          )}
+        </div>
       </CardHeader>
+<<<<<<< HEAD
+      <CardContent className={cn("space-y-3 p-6 text-sm", !verified ? "pt-6" : "")}>
+        <div className="flex items-center gap-2">
+          <span className="w-16 font-medium text-muted-foreground">Утас: </span>
+          <a className="font-semibold text-primary underline-offset-4 hover:underline" href={`tel:${phone}`}>
+            {phone}
+          </a>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="w-16 font-medium text-muted-foreground">SISI ID: </span>
+          <span className="font-semibold">{sisiId}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="w-16 font-medium text-muted-foreground">Имэйл: </span>
+          <a className="font-semibold text-primary underline-offset-4 hover:underline" href={`mailto:${email}`}>
+            {email}
+          </a>
+        </div>
+=======
       <CardContent className="space-y-2 text-sm">
         <p><span className="font-medium">Утас: </span><a className="text-primary underline" href={`tel:${phone}`}>{phone}</a></p>
         <p><span className="font-medium">SISI ID: </span>{sisiId}</p>
         <p><span className="font-medium">Имэйл: </span><a className="text-primary underline" href={`mailto:${email}`}>{email}</a></p>
+>>>>>>> d763aebc7df36e8675f386ca84342fa128d94860
       </CardContent>
     </Card>
   )

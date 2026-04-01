@@ -109,6 +109,13 @@ export function CreatePostDialog({
       setError("Баталгаажуулах асуулт болон хариулт заавал оруулна уу.")
       return
     }
+<<<<<<< HEAD
+    if (!verificationQuestion.trim() || !correctAnswer.trim()) {
+      setError("Баталгаажуулах асуулт, зөв хариулт заавал.");
+      return
+    }
+=======
+>>>>>>> d763aebc7df36e8675f386ca84342fa128d94860
 
     const rewardNum = type === "lost" && rewardAmount.trim() ? Number(rewardAmount.replace(/\D/g, "")) : undefined
     const finderRewardNum = type === "found" && finderReward.trim() ? Number(finderReward.replace(/\D/g, "")) : undefined
@@ -125,12 +132,21 @@ export function CreatePostDialog({
       authorId: currentUser.id,
       rewardAmount: type === "lost" && rewardNum && rewardNum > 0 ? rewardNum : undefined,
       fbShare: fbShare || undefined,
+<<<<<<< HEAD
+      verificationQuestion: verificationQuestion.trim(),
+      correctAnswer: correctAnswer.trim(),
+      finderRewardAmount:
+        type === "found" && finderRewardNum && finderRewardNum > 0
+          ? finderRewardNum
+          : undefined,
+=======
       // New multi-question field
       verificationQuestions: validQs,
       // Keep legacy fields for backward compat
       verificationQuestion: validQs[0]?.question,
       correctAnswer: validQs[0]?.answer,
       finderRewardAmount: type === "found" && finderRewardNum && finderRewardNum > 0 ? finderRewardNum : undefined,
+>>>>>>> d763aebc7df36e8675f386ca84342fa128d94860
       escrow: escrow || undefined,
     }
 
@@ -217,11 +233,28 @@ export function CreatePostDialog({
                 </div>
               </div>
 
+<<<<<<< HEAD
+              {/* Verification Section */}
+              <div className="space-y-4 rounded-2xl border border-teal-200/70 bg-gradient-to-br from-teal-50/80 to-emerald-50/40 p-4 shadow-sm ring-1 ring-teal-500/10 dark:border-teal-900/50 dark:from-teal-950/30 dark:to-emerald-950/20 dark:ring-teal-500/5">
+                  <div className="flex items-start gap-3">
+                    <div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-teal-400 to-emerald-600 text-white shadow-md shadow-teal-500/25">
+                      <HelpCircle className="size-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-foreground">
+                        Баталгаажуулах асуулт *
+                      </h4>
+                      <p className="text-xs leading-relaxed text-muted-foreground">
+                        {type === "found" ? "Эзнийг" : "Олсон хүнийг"} тогтоох асуулт (заавал)
+                      </p>
+                    </div>
+=======
               {/* ── Verification Questions (both lost & found) ── */}
               <div className="space-y-4 rounded-2xl border border-teal-200/70 bg-gradient-to-br from-teal-50/80 to-emerald-50/40 p-4 shadow-sm ring-1 ring-teal-500/10">
                 <div className="flex items-start gap-3">
                   <div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-teal-400 to-emerald-600 text-white shadow-md shadow-teal-500/25">
                     <HelpCircle className="size-5" />
+>>>>>>> d763aebc7df36e8675f386ca84342fa128d94860
                   </div>
                   <div>
                     <h4 className="text-sm font-bold text-foreground">

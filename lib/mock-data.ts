@@ -1,4 +1,4 @@
-import type { Post, User, WithdrawalRequest } from "./types"
+import type { Post, User, WithdrawalRequest } from "./types";
 
 export const MOCK_CATEGORIES = [
   "Утас, таблет",
@@ -6,19 +6,15 @@ export const MOCK_CATEGORIES = [
   "Дэвтэр, ном",
   "Түргэн хоол",
   "Бусад",
-] as const
+] as const;
 
 export const MOCK_LOCATIONS = [
   "1-р байр",
   "2-р байр",
   "Номын сан",
   "Спорт заал",
-  "4-р байр",
-  "5-р байр",
-  "7-р байр",
-  "8-р байр",
-  "Хууль зүйн сургууль",
-  "Багш хөгжлийн төв",
+  "Идэвхтэн амралт",
+  "Үндсэн коридор",
 ] as const
 
 export const INITIAL_USERS: User[] = [
@@ -56,7 +52,15 @@ export const INITIAL_USERS: User[] = [
     name: "Тэмүүлэн Бат",
     password: "demo",
   },
-]
+  {
+    id: "u-4",
+    sisiId: "D24123456",
+    phone: "88000000",
+    email: "engin@num.edu.mn",
+    name: "Хэрэглэгч",
+    password: "1234",
+  },
+];
 
 export const INITIAL_POSTS: Post[] = [
   {
@@ -73,6 +77,8 @@ export const INITIAL_POSTS: Post[] = [
     authorId: "u-1",
     status: "published",
     rewardAmount: 50000,
+    verificationQuestion: "AirPods-ийн device нэр нь юу вэ?",
+    correctAnswer: "Boldiin AirPods",
   },
   {
     id: "p-2",
@@ -103,6 +109,8 @@ export const INITIAL_POSTS: Post[] = [
       "https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=600&q=80",
     authorId: "u-1",
     status: "published",
+    verificationQuestion: "Номын эхний хуудсан дээрх нэрийн эхний үсэг юу вэ?",
+    correctAnswer: "Б",
   },
   {
     id: "p-4",
@@ -132,6 +140,8 @@ export const INITIAL_POSTS: Post[] = [
     authorId: "u-2",
     status: "published",
     rewardAmount: 80000,
+    verificationQuestion: "Утасны дэлгэцийн хагарал аль буланд байсан бэ?",
+    correctAnswer: "баруун доод",
   },
   {
     id: "p-6",
@@ -160,6 +170,8 @@ export const INITIAL_POSTS: Post[] = [
       "https://images.unsplash.com/photo-1434493789847-2f02dc6ca35d?w=600&q=80",
     authorId: "u-2",
     status: "published",
+    verificationQuestion: "Apple Watch-ийн ремэн ямар өнгөтэй вэ?",
+    correctAnswer: "цайвар",
   },
   {
     id: "p-8",
@@ -189,6 +201,8 @@ export const INITIAL_POSTS: Post[] = [
       "https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?w=600&q=80",
     authorId: "u-3",
     status: "published",
+    verificationQuestion: "Шилэн савны хэмжээ хэдэн мл вэ?",
+    correctAnswer: "250",
   },
   {
     id: "p-10",
@@ -218,6 +232,8 @@ export const INITIAL_POSTS: Post[] = [
     authorId: "u-1",
     status: "published",
     rewardAmount: 40000,
+    verificationQuestion: "Цүнхний брэнд юу вэ?",
+    correctAnswer: "Nike",
   },
   {
     id: "p-12",
@@ -246,6 +262,8 @@ export const INITIAL_POSTS: Post[] = [
       "https://images.unsplash.com/photo-1620591549194-f5a4c4d07f6f?w=600&q=80",
     authorId: "u-3",
     status: "published",
+    verificationQuestion: "Түрийвч ямар материалтай вэ?",
+    correctAnswer: "арьсан",
   },
   {
     id: "p-14",
@@ -275,6 +293,8 @@ export const INITIAL_POSTS: Post[] = [
     authorId: "u-2",
     status: "published",
     rewardAmount: 120000,
+    verificationQuestion: "iPad-ийн кейс ямар өнгөтэй вэ?",
+    correctAnswer: "хар",
   },
   {
     id: "p-16",
@@ -303,6 +323,8 @@ export const INITIAL_POSTS: Post[] = [
       "https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=600&q=80",
     authorId: "u-admin",
     status: "published",
+    verificationQuestion: "Номын хавтас ямар өнгөтэй вэ?",
+    correctAnswer: "улаан",
   },
   {
     id: "p-18",
@@ -333,6 +355,8 @@ export const INITIAL_POSTS: Post[] = [
     authorId: "u-3",
     status: "published",
     rewardAmount: 200000,
+    verificationQuestion: "Оюутны үнэмлэхний оосор ямар өнгөтэй вэ?",
+    correctAnswer: "цэнхэр",
   },
   {
     id: "p-20",
@@ -349,6 +373,6 @@ export const INITIAL_POSTS: Post[] = [
     verificationQuestion: "Таг ямар өнгөтэй вэ?",
     correctAnswer: "цэнхэр",
   },
-]
+];
 
-export const INITIAL_WITHDRAWALS: WithdrawalRequest[] = []
+export const INITIAL_WITHDRAWALS: WithdrawalRequest[] = [];

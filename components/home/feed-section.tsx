@@ -67,7 +67,7 @@ export function FeedSection() {
               Хаясан болон олсон заруудыг шүүж хайна уу.
             </p>
           </div>
-          <div className="flex w-fit gap-1.5 rounded-2xl border border-border/40 bg-muted/50 p-2 shadow-sm backdrop-blur-sm">
+          <div className="flex w-fit gap-1.5 rounded-2xl bg-muted/50 p-2 shadow-sm backdrop-blur-sm">
             <FeedTab
               type="lost"
               active={tab === "lost"}
@@ -85,7 +85,7 @@ export function FeedSection() {
           </div>
         </div>
 
-        <div className="mb-14 grid gap-6 rounded-[1.5rem] border border-border/60 bg-card p-5 shadow-sm sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mb-14 grid gap-6 rounded-[1.5rem]  bg-card p-5 shadow-sm sm:grid-cols-2 lg:grid-cols-4">
           <div className="sm:col-span-2">
             <div className="flex h-14 w-full items-center rounded-full border border-border/60 bg-background pl-5 pr-1.5 shadow-sm ring-1 ring-black/[0.04] sm:h-[3.75rem] sm:pl-6 sm:pr-2">
               <input
@@ -94,7 +94,7 @@ export function FeedSection() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Гарчиг эсвэл тайлбараар..."
-                className="min-w-0 flex-1 border-0 bg-transparent py-2.5 text-base text-foreground outline-none placeholder:text-muted-foreground/70 focus:ring-0 sm:py-3 sm:text-lg"
+                className="min-w-0 flex-1 bg-transparent py-2.5 text-base text-foreground outline-none placeholder:text-muted-foreground/70 focus:ring-0 sm:py-3 sm:text-lg"
                 autoComplete="off"
               />
               <button

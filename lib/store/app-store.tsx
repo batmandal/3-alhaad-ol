@@ -50,6 +50,12 @@ interface AppContextValue extends AppState {
   }) => void
   completeWithdrawal: (id: string) => void
   getUserById: (id: string) => User | undefined
+  updateCurrentUserProfile: (payload: {
+    name: string
+    phone: string
+    email: string
+    sisiId: string
+  }) => { ok: boolean; message?: string }
 }
 
 const AppContext = React.createContext<AppContextValue | null>(null)
@@ -120,7 +126,13 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
   const verifyFoundAnswer = React.useCallback(
     (postId: string, answer: string) => {
       const post = posts.find((p) => p.id === postId)
+<<<<<<< HEAD
+      if (!post) {
+        return { ok: false, message: "Зар олдсонгүй." }
+      }
+=======
       if (!post || post.type !== "found") return { ok: false, message: "Зар олдсонгүй." }
+>>>>>>> d763aebc7df36e8675f386ca84342fa128d94860
       const expected = post.correctAnswer
       if (!expected) return { ok: false, message: "Баталгаажуулалт тохируулаагүй." }
       if (normalizeAnswer(answer) !== normalizeAnswer(expected)) {
@@ -271,6 +283,94 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
     )
   }, [])
 
+<<<<<<< HEAD
+  const updateCurrentUserProfile = React.useCallback(
+    (payload: { name: string; phone: string; email: string; sisiId: string }) => {
+      if (!currentUser) {
+        return { ok: false, message: "Нэвтрээгүй байна." }
+      }
+
+      const next = {
+        name: payload.name.trim(),
+        phone: payload.phone.trim(),
+        email: payload.email.trim().toLowerCase(),
+        sisiId: payload.sisiId.trim(),
+      }
+
+      if (!next.name || !next.phone || !next.email || !next.sisiId) {
+        return { ok: false, message: "Бүх талбарыг бөглөнө үү." }
+      }
+
+      const duplicatedPhone = users.some(
+        (u) => u.id !== currentUser.id && u.phone === next.phone
+      )
+      if (duplicatedPhone) {
+        return { ok: false, message: "Энэ утасны дугаар бүртгэлтэй байна." }
+      }
+
+      const duplicatedEmail = users.some(
+        (u) => u.id !== currentUser.id && u.email.toLowerCase() === next.email
+      )
+      if (duplicatedEmail) {
+        return { ok: false, message: "Энэ имэйл бүртгэлтэй байна." }
+      }
+
+      const duplicatedSisi = users.some(
+        (u) => u.id !== currentUser.id && u.sisiId === next.sisiId
+      )
+      if (duplicatedSisi) {
+        return { ok: false, message: "Энэ SISI ID бүртгэлтэй байна." }
+      }
+
+      setUsers((prev) =>
+        prev.map((u) => (u.id === currentUser.id ? { ...u, ...next } : u))
+      )
+      setCurrentUser((prev) => (prev ? { ...prev, ...next } : prev))
+      return { ok: true }
+    },
+    [currentUser, users]
+  )
+
+  const getUserById = React.useCallback(
+    (id: string) => users.find((u) => u.id === id),
+    [users]
+  )
+
+  const value = React.useMemo<AppContextValue>(
+    () => ({
+      users,
+      posts,
+      withdrawals,
+      currentUser,
+      rewardEligibilities,
+      login,
+      signup,
+      logout,
+      addPost,
+      updatePostStatus,
+      verifyFoundAnswer,
+      submitWithdrawal,
+      completeWithdrawal,
+      getUserById,
+      updateCurrentUserProfile,
+    }),
+    [
+      users,
+      posts,
+      withdrawals,
+      currentUser,
+      rewardEligibilities,
+      login,
+      signup,
+      addPost,
+      updatePostStatus,
+      verifyFoundAnswer,
+      submitWithdrawal,
+      completeWithdrawal,
+      getUserById,
+      updateCurrentUserProfile,
+    ]
+=======
   const getUserById = React.useCallback((id: string) => users.find((u) => u.id === id), [users])
 
   const value = React.useMemo<AppContextValue>(
@@ -282,6 +382,7 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
       submitWithdrawal, completeWithdrawal, getUserById,
     }),
     [users, posts, claims, withdrawals, currentUser, rewardEligibilities, login, signup, logout, addPost, updatePostStatus, verifyFoundAnswer, submitClaim, approveClaim, rejectClaim, getClaimsForPost, getMyClaims, submitWithdrawal, completeWithdrawal, getUserById]
+>>>>>>> d763aebc7df36e8675f386ca84342fa128d94860
   )
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>
