@@ -13,8 +13,12 @@ export const MOCK_LOCATIONS = [
   "2-р байр",
   "Номын сан",
   "Спорт заал",
-  "Идэвхтэн амралт",
-  "Үндсэн коридор",
+  "4-р байр",
+  "5-р байр",
+  "7-р байр",
+  "8-р байр",
+  "Хууль зүйн сургууль",
+  "Багш хөгжлийн төв",
 ] as const
 
 export const INITIAL_USERS: User[] = [
@@ -118,7 +122,7 @@ export const INITIAL_POSTS: Post[] = [
     title: "Түлхүүр олдсон",
     description: "NUM лого бүхий түлхүүр.",
     category: "Бусад",
-    location: "Үндсэн коридор",
+    location: "2-р байр",
     date: "2026-03-24",
     imageUrl:
       "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=600&q=80",
@@ -164,7 +168,7 @@ export const INITIAL_POSTS: Post[] = [
     title: "Ухаалаг цаг Apple Watch",
     description: "Цайвар спорт ремэнтэй, цэнэг бага байсан.",
     category: "Утас, таблет",
-    location: "Идэвхтэн амралт",
+    location: "Номын сан",
     date: "2026-03-19",
     imageUrl:
       "https://images.unsplash.com/photo-1434493789847-2f02dc6ca35d?w=600&q=80",
@@ -210,7 +214,7 @@ export const INITIAL_POSTS: Post[] = [
     title: "USB-C цэнэглэгч",
     description: "Цагаан адаптер, урт кабельтай.",
     category: "Утас, таблет",
-    location: "Үндсэн коридор",
+    location: "8-р байр",
     date: "2026-03-25",
     imageUrl:
       "https://images.unsplash.com/photo-1583863788434-e42a44cbd7aa?w=600&q=80",
@@ -256,7 +260,7 @@ export const INITIAL_POSTS: Post[] = [
     title: "Кредит картны түрийвч",
     description: "Бор арьсан, дотор нь оюутны үнэмлэх.",
     category: "Үнэт эдлэл",
-    location: "Идэвхтэн амралт",
+    location: "4-р байр",
     date: "2026-03-13",
     imageUrl:
       "https://images.unsplash.com/photo-1620591549194-f5a4c4d07f6f?w=600&q=80",
@@ -348,7 +352,7 @@ export const INITIAL_POSTS: Post[] = [
     title: "Оюутны үнэмлэх",
     description: "Хамт цүнхтэй алдсан, цэнхэр оосортой.",
     category: "Бусад",
-    location: "Үндсэн коридор",
+    location: "1-р байр",
     date: "2026-03-08",
     imageUrl:
       "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=600&q=80",
