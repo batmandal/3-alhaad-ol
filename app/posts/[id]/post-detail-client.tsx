@@ -31,19 +31,39 @@ export function PostDetailClient({ id }: { id: string }) {
 
   const author = getUserById(post.authorId)
 
+  function normalizeAnswer(s: string) {
+    return s.trim().toLowerCase().replace(/\s+/g, " ")
+  }
+
   function handleVerify(e: React.FormEvent) {
     e.preventDefault()
     setMsg(null)
-    const r = verifyFoundAnswer(id, answer)
-    if (!r.ok) setMsg(r.message ?? "Алдаа")
-    else {
+    if (!post) return
+    if (!post.correctAnswer?.trim()) {
+      setMsg("Баталгаажуулах зөв хариулт тохируулаагүй байна.")
+      return
+    }
+
+    if (post.type === "found") {
+      const r = verifyFoundAnswer(id, answer)
+      if (!r.ok) {
+        setMsg(r.message ?? "Алдаа")
+        return
+      }
       setVerified(true)
       setMsg("Зөв! Доорх холбоо барих мэдээллийг харна уу.")
+      return
     }
+
+    if (normalizeAnswer(answer) !== normalizeAnswer(post.correctAnswer)) {
+      setMsg("Хариулт таарахгүй байна.")
+      return
+    }
+    setVerified(true)
+    setMsg("Зөв! Доорх холбоо барих мэдээллийг харна уу.")
   }
 
-  const showContact =
-    post.type === "found" && verified && post.correctAnswer && author
+  const showContact = verified && post.correctAnswer && author
 
   return (
     <article className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
@@ -91,7 +111,7 @@ export function PostDetailClient({ id }: { id: string }) {
         </p>
       ) : null}
 
-      {post.type === "found" && post.verificationQuestion && (
+      {post.verificationQuestion && (
         <Card className="mt-10">
           <CardHeader>
             <CardTitle>Баталгаажуулалт</CardTitle>
@@ -101,6 +121,12 @@ export function PostDetailClient({ id }: { id: string }) {
               Эзэмшигч болохын тулд асуултад зөв хариулна уу.
             </p>
             <p className="font-medium">{post.verificationQuestion}</p>
+            {post.correctAnswer && (
+              <p className="text-sm text-emerald-700">
+                Temporary зөв хариулт:{" "}
+                <span className="font-semibold">{post.correctAnswer}</span>
+              </p>
+            )}
             {!verified ? (
               <form className="flex flex-col gap-3 sm:flex-row sm:items-end" onSubmit={handleVerify}>
                 <div className="grid flex-1 gap-2">
