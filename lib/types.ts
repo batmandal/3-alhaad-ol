@@ -1,6 +1,10 @@
 export type PostType = "lost" | "found"
 export type PostStatus = "draft" | "pending_payment" | "published"
-export type ClaimStatus = "pending" | "approved" | "rejected"
+
+export interface VerificationQuestion {
+  question: string
+  answer: string
+}
 
 export interface Post {
   id: string
@@ -15,11 +19,14 @@ export interface Post {
   status: PostStatus
   rewardAmount?: number
   fbShare?: boolean
+  /** "found" зарын хуучин нэг асуулт */
   verificationQuestion?: string
   correctAnswer?: string
-  /** Олдсон зар дээр шагнал (жишээ нь олсон этгээдэд) */
+  /** 1-3 асуулт (lost болон found) */
+  verificationQuestions?: VerificationQuestion[]
   finderRewardAmount?: number
   escrow?: boolean
+  escrowPaid?: boolean
 }
 
 export interface User {
@@ -31,6 +38,23 @@ export interface User {
   name: string
   password?: string
   isAdmin?: boolean
+}
+
+export type ClaimStatus = "pending" | "approved" | "rejected"
+
+export interface Claim {
+  id: string
+  postId: string
+  postTitle: string
+  postType: PostType
+  claimantId: string
+  claimantName: string
+  claimantEmail: string
+  claimantPhone: string
+  answers: string[]
+  answersCorrect: boolean[]
+  status: ClaimStatus
+  createdAt: string
 }
 
 export type WithdrawalStatus = "pending" | "completed"
@@ -49,17 +73,4 @@ export interface WithdrawalRequest {
 export interface RewardEligibility {
   postId: string
   amount: number
-}
-export interface Claim {
-  id: string
-  postId: string
-  claimantId: string /** Олсон хүн эсвэл эд зүйлийн эзэмшигч */
-  claimantName: string
-  claimantEmail: string
-  answers: string[] /** Баталгаажуулалтын асуултуудын хариултууд */
-  status: ClaimStatus
-  createdAt: string
-  reviewedAt?: string
-  reviewedBy?: string /** Admin-ийн ID */
-  notes?: string
 }
