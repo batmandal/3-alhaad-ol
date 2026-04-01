@@ -5,6 +5,7 @@ export const MOCK_CATEGORIES = [
   "Үнэт эдлэл",
   "Дэвтэр, ном",
   "Түргэн хоол",
+  "Хувцас гутал",
   "Бусад",
 ] as const;
 
@@ -18,7 +19,7 @@ export const MOCK_LOCATIONS = [
   "7-р байр",
   "8-р байр",
   "Хууль зүйн сургууль",
-  "Багш хөгжлийн төв",
+  "Багш оюутан хөгжлийн төв",
 ] as const
 
 export const INITIAL_USERS: User[] = [
@@ -87,7 +88,7 @@ export const INITIAL_POSTS: Post[] = [
   {
     id: "p-2",
     type: "found",
-    title: "Торгоны түрийвч олдсон",
+    title: "Түрийвч олдсон",
     description:
       "2-р байрын орцонд хар торгоны түрийвч. Баталгаажуулалт шаардлагатай.",
     category: "Үнэт эдлэл",
@@ -199,7 +200,7 @@ export const INITIAL_POSTS: Post[] = [
     title: "Лабораторийн шилэн сав",
     description: "Химийн хичээлийн 250мл хэмжээстэй.",
     category: "Бусад",
-    location: "2-р байр",
+    location: "Номын сан",
     date: "2026-03-17",
     imageUrl:
       "https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?w=600&q=80",
@@ -305,7 +306,7 @@ export const INITIAL_POSTS: Post[] = [
     type: "found",
     title: "Малгай (beanie)",
     description: "Саарал өнгөтэй, номын сан 2 давхарт.",
-    category: "Бусад",
+    category: "Хувцас гутал",
     location: "Номын сан",
     date: "2026-03-11",
     imageUrl:
