@@ -1,14 +1,6 @@
 "use client"
 
 import * as React from "react"
-<<<<<<< HEAD
-import {
-  INITIAL_POSTS,
-  INITIAL_USERS,
-  INITIAL_WITHDRAWALS,
-} from "@/lib/mock-data"
-import type { Post, PostStatus, RewardEligibility, User, WithdrawalRequest } from "@/lib/types"
-=======
 import { INITIAL_POSTS, INITIAL_USERS, INITIAL_WITHDRAWALS } from "@/lib/mock-data"
 import type {
   Claim,
@@ -22,7 +14,6 @@ import type {
 } from "@/lib/types"
 
 const STORAGE_KEY = "lostfound.appstate.v1"
->>>>>>> 12f14585e90dc9cb32b5e48d8b0ac7666e4ba1e4
 
 function normalizeAnswer(s: string) {
   return s.trim().toLowerCase().replace(/\s+/g, " ")
@@ -31,6 +22,7 @@ function normalizeAnswer(s: string) {
 interface AppState {
   users: User[]
   posts: Post[]
+  claims: Claim[]
   withdrawals: WithdrawalRequest[]
   currentUser: User | null
   rewardEligibilities: Record<string, RewardEligibility[]>
@@ -49,19 +41,12 @@ interface AppContextValue extends AppState {
   logout: () => void
   addPost: (post: Omit<Post, "id" | "status"> & { status?: PostStatus }) => Post
   updatePostStatus: (id: string, status: PostStatus) => void
-<<<<<<< HEAD
-  verifyFoundAnswer: (
-    postId: string,
-    answer: string
-  ) => { ok: boolean; message?: string }
-=======
   verifyFoundAnswer: (postId: string, answer: string) => { ok: boolean; message?: string }
   submitClaim: (postId: string, answers: string[]) => { ok: boolean; message?: string; claimId?: string }
   approveClaim: (claimId: string) => void
   rejectClaim: (claimId: string) => void
   getClaimsForPost: (postId: string) => Claim[]
   getMyClaims: () => Claim[]
->>>>>>> 12f14585e90dc9cb32b5e48d8b0ac7666e4ba1e4
   submitWithdrawal: (payload: {
     postId: string
     amount: number
@@ -69,6 +54,7 @@ interface AppContextValue extends AppState {
     accountNumber: string
   }) => void
   completeWithdrawal: (id: string) => void
+  updateCurrentUserProfile: (payload: { name: string; phone: string; email: string; sisiId: string }) => { ok: boolean; message?: string }
   getUserById: (id: string) => User | undefined
 }
 
@@ -77,15 +63,9 @@ const AppContext = React.createContext<AppContextValue | null>(null)
 export function AppStoreProvider({ children }: { children: React.ReactNode }) {
   const [users, setUsers] = React.useState<User[]>(INITIAL_USERS)
   const [posts, setPosts] = React.useState<Post[]>(INITIAL_POSTS)
-  const [withdrawals, setWithdrawals] = React.useState<WithdrawalRequest[]>(
-    INITIAL_WITHDRAWALS
-  )
+  const [claims, setClaims] = React.useState<Claim[]>([])
+  const [withdrawals, setWithdrawals] = React.useState<WithdrawalRequest[]>(INITIAL_WITHDRAWALS)
   const [currentUser, setCurrentUser] = React.useState<User | null>(null)
-<<<<<<< HEAD
-  const [rewardEligibilities, setRewardEligibilities] = React.useState<
-    Record<string, RewardEligibility[]>
-  >({})
-=======
   const [rewardEligibilities, setRewardEligibilities] = React.useState<Record<string, RewardEligibility[]>>({})
   const [isHydrated, setIsHydrated] = React.useState(false)
 
@@ -104,13 +84,8 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
       if (parsed.withdrawals) setWithdrawals(parsed.withdrawals)
       if (parsed.currentUser !== undefined) setCurrentUser(parsed.currentUser ?? null)
       if (parsed.rewardEligibilities) setRewardEligibilities(parsed.rewardEligibilities)
-      // #region agent log
-      fetch("http://127.0.0.1:7747/ingest/35cfc354-c5ae-4432-bd72-d21a2a14ee0c",{method:"POST",headers:{"Content-Type":"application/json","X-Debug-Session-Id":"cebf2c"},body:JSON.stringify({sessionId:"cebf2c",runId:"initial",hypothesisId:"H2",location:"lib/store/app-store.tsx:hydrate",message:"Hydrated local state",data:{hasRaw:Boolean(raw),posts:parsed.posts?.length ?? -1,users:parsed.users?.length ?? -1},timestamp:Date.now()})}).catch(()=>{})
-      // #endregion
     } catch {
-      // #region agent log
-      fetch("http://127.0.0.1:7747/ingest/35cfc354-c5ae-4432-bd72-d21a2a14ee0c",{method:"POST",headers:{"Content-Type":"application/json","X-Debug-Session-Id":"cebf2c"},body:JSON.stringify({sessionId:"cebf2c",runId:"initial",hypothesisId:"H4",location:"lib/store/app-store.tsx:hydrate",message:"Hydrate parse failed",data:{},timestamp:Date.now()})}).catch(()=>{})
-      // #endregion
+      // ignore parse errors
     } finally {
       setIsHydrated(true)
     }
@@ -127,31 +102,16 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
       rewardEligibilities,
     }
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot))
-    // #region agent log
-    fetch("http://127.0.0.1:7747/ingest/35cfc354-c5ae-4432-bd72-d21a2a14ee0c",{method:"POST",headers:{"Content-Type":"application/json","X-Debug-Session-Id":"cebf2c"},body:JSON.stringify({sessionId:"cebf2c",runId:"initial",hypothesisId:"H3",location:"lib/store/app-store.tsx:persist",message:"Persisted local state",data:{posts:posts.length,users:users.length,claims:claims.length},timestamp:Date.now()})}).catch(()=>{})
-    // #endregion
   }, [users, posts, claims, withdrawals, currentUser, rewardEligibilities, isHydrated])
->>>>>>> 12f14585e90dc9cb32b5e48d8b0ac7666e4ba1e4
 
   const login = React.useCallback(
     (phoneOrEmail: string, password: string) => {
       const q = phoneOrEmail.trim().toLowerCase()
-<<<<<<< HEAD
-      const u = users.find(
-        (x) =>
-          x.phone === phoneOrEmail.trim() ||
-          x.email.toLowerCase() === q
-      )
-=======
       const u = users.find((x) => x.phone === phoneOrEmail.trim() || x.email.toLowerCase() === q)
->>>>>>> 12f14585e90dc9cb32b5e48d8b0ac7666e4ba1e4
       if (!u || (u.password && u.password !== password)) {
         return { ok: false, message: "Утас эсвэл имэйл, нууц үг буруу байна." }
       }
       setCurrentUser(u)
-      // #region agent log
-      fetch("http://127.0.0.1:7747/ingest/35cfc354-c5ae-4432-bd72-d21a2a14ee0c",{method:"POST",headers:{"Content-Type":"application/json","X-Debug-Session-Id":"cebf2c"},body:JSON.stringify({sessionId:"cebf2c",runId:"initial",hypothesisId:"H1",location:"lib/store/app-store.tsx:login",message:"Login success",data:{userId:u.id},timestamp:Date.now()})}).catch(()=>{})
-      // #endregion
       return { ok: true }
     },
     [users]
@@ -190,29 +150,11 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
 
   const logout = React.useCallback(() => setCurrentUser(null), [])
 
-<<<<<<< HEAD
-  const addPost = React.useCallback(
-    (post: Omit<Post, "id" | "status"> & { status?: PostStatus }) => {
-      const p: Post = {
-        ...post,
-        id: `p-${Date.now()}`,
-        status: post.status ?? "published",
-      }
-      setPosts((prev) => [p, ...prev])
-      return p
-    },
-    []
-  )
-=======
   const addPost = React.useCallback((post: Omit<Post, "id" | "status"> & { status?: PostStatus }) => {
     const p: Post = { ...post, id: `p-${Date.now()}`, status: post.status ?? "published" }
     setPosts((prev) => [p, ...prev])
-    // #region agent log
-    fetch("http://127.0.0.1:7747/ingest/35cfc354-c5ae-4432-bd72-d21a2a14ee0c",{method:"POST",headers:{"Content-Type":"application/json","X-Debug-Session-Id":"cebf2c"},body:JSON.stringify({sessionId:"cebf2c",runId:"initial",hypothesisId:"H3",location:"lib/store/app-store.tsx:addPost",message:"Post added",data:{postId:p.id,authorId:p.authorId,status:p.status},timestamp:Date.now()})}).catch(()=>{})
-    // #endregion
     return p
   }, [])
->>>>>>> 12f14585e90dc9cb32b5e48d8b0ac7666e4ba1e4
 
   const updatePostStatus = React.useCallback((id: string, status: PostStatus) => {
     setPosts((prev) => prev.map((p) => (p.id === id ? { ...p, status } : p)))
@@ -221,13 +163,7 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
   const verifyFoundAnswer = React.useCallback(
     (postId: string, answer: string) => {
       const post = posts.find((p) => p.id === postId)
-<<<<<<< HEAD
-      if (!post || post.type !== "found") {
-        return { ok: false, message: "Зар олдсонгүй." }
-      }
-=======
       if (!post || post.type !== "found") return { ok: false, message: "Зар олдсонгүй." }
->>>>>>> 12f14585e90dc9cb32b5e48d8b0ac7666e4ba1e4
       const expected = post.correctAnswer
       if (!expected) {
         return { ok: false, message: "Баталгаажуулалт тохируулаагүй." }
@@ -241,14 +177,7 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
           const uid = currentUser.id
           const list = prev[uid] ?? []
           if (list.some((e) => e.postId === postId)) return prev
-<<<<<<< HEAD
-          return {
-            ...prev,
-            [uid]: [...list, { postId, amount: post.finderRewardAmount! }],
-          }
-=======
           return { ...prev, [uid]: [...list, { postId, amount: rewardAmount }] }
->>>>>>> 12f14585e90dc9cb32b5e48d8b0ac7666e4ba1e4
         })
       }
       return { ok: true }
@@ -256,8 +185,6 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
     [posts, currentUser]
   )
 
-<<<<<<< HEAD
-=======
   const submitClaim = React.useCallback(
     (postId: string, answers: string[]) => {
       if (!currentUser) return { ok: false, message: "Эхлээд нэвтэрнэ үү." }
@@ -342,7 +269,6 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
   const getClaimsForPost = React.useCallback((postId: string) => claims.filter((c) => c.postId === postId), [claims])
   const getMyClaims = React.useCallback(() => (currentUser ? claims.filter((c) => c.claimantId === currentUser.id) : []), [claims, currentUser])
 
->>>>>>> 12f14585e90dc9cb32b5e48d8b0ac7666e4ba1e4
   const submitWithdrawal = React.useCallback(
     (payload: {
       postId: string
@@ -380,12 +306,6 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
     )
   }, [])
 
-<<<<<<< HEAD
-  const getUserById = React.useCallback(
-    (id: string) => users.find((u) => u.id === id),
-    [users]
-  )
-=======
   const updateCurrentUserProfile = React.useCallback(
     (payload: { name: string; phone: string; email: string; sisiId: string }) => {
       if (!currentUser) return { ok: false, message: "Нэвтрээгүй байна." }
@@ -416,7 +336,6 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
   )
 
   const getUserById = React.useCallback((id: string) => users.find((u) => u.id === id), [users])
->>>>>>> 12f14585e90dc9cb32b5e48d8b0ac7666e4ba1e4
 
   const value = React.useMemo<AppContextValue>(
     () => ({
@@ -439,11 +358,8 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
       getMyClaims,
       submitWithdrawal,
       completeWithdrawal,
-      getUserById,
-<<<<<<< HEAD
-=======
       updateCurrentUserProfile,
->>>>>>> 12f14585e90dc9cb32b5e48d8b0ac7666e4ba1e4
+      getUserById,
     }),
     [
       users,
@@ -465,6 +381,7 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
       getMyClaims,
       submitWithdrawal,
       completeWithdrawal,
+      updateCurrentUserProfile,
       getUserById,
     ]
   )
