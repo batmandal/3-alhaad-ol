@@ -47,20 +47,20 @@ export function PostDetailClient({ id }: { id: string }) {
     if (post.type === "found") {
       const r = verifyFoundAnswer(id, answer)
       if (!r.ok) {
-        setMsg(r.message ?? "Алдаа")
+        setMsg("Буруу хариулт байна. Дахин оролдоно уу.")
         return
       }
       setVerified(true)
-      setMsg("Зөв! Доорх холбоо барих мэдээллийг харна уу.")
+      setMsg("Зөв хариулт! Постын эзэнтэй холбогдох мэдээлэл доор харагдаж байна.")
       return
     }
 
     if (normalizeAnswer(answer) !== normalizeAnswer(post.correctAnswer)) {
-      setMsg("Хариулт таарахгүй байна.")
+      setMsg("Буруу хариулт байна. Дахин оролдоно уу.")
       return
     }
     setVerified(true)
-    setMsg("Зөв! Доорх холбоо барих мэдээллийг харна уу.")
+    setMsg("Зөв хариулт! Постын эзэнтэй холбогдох мэдээлэл доор харагдаж байна.")
   }
 
   const showContact = verified && post.correctAnswer && author
@@ -121,12 +121,7 @@ export function PostDetailClient({ id }: { id: string }) {
               Эзэмшигч болохын тулд асуултад зөв хариулна уу.
             </p>
             <p className="font-medium">{post.verificationQuestion}</p>
-            {post.correctAnswer && (
-              <p className="text-sm text-emerald-700">
-                Temporary зөв хариулт:{" "}
-                <span className="font-semibold">{post.correctAnswer}</span>
-              </p>
-            )}
+
             {!verified ? (
               <form className="flex flex-col gap-3 sm:flex-row sm:items-end" onSubmit={handleVerify}>
                 <div className="grid flex-1 gap-2">
@@ -141,7 +136,11 @@ export function PostDetailClient({ id }: { id: string }) {
                 <Button type="submit">Илгээх</Button>
               </form>
             ) : null}
-            {msg && <p className="text-sm text-muted-foreground">{msg}</p>}
+            {msg && (
+              <p className={`text-sm font-medium ${verified ? "text-emerald-700" : "text-red-600"}`}>
+                {msg}
+              </p>
+            )}
           </CardContent>
         </Card>
       )}

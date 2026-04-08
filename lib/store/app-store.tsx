@@ -57,13 +57,8 @@ interface AppContextValue extends AppState {
     accountNumber: string
   }) => void
   completeWithdrawal: (id: string) => void
+  updateCurrentUserProfile: (payload: { name: string; phone: string; email: string; sisiId: string }) => { ok: boolean; message?: string }
   getUserById: (id: string) => User | undefined
-  updateCurrentUserProfile: (payload: {
-    name: string
-    phone: string
-    email: string
-    sisiId: string
-  }) => { ok: boolean; message?: string }
 }
 
 const AppContext = React.createContext<AppContextValue | null>(null)
@@ -97,13 +92,8 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
       if (parsed.withdrawals) setWithdrawals(parsed.withdrawals)
       if (parsed.currentUser !== undefined) setCurrentUser(parsed.currentUser ?? null)
       if (parsed.rewardEligibilities) setRewardEligibilities(parsed.rewardEligibilities)
-      // #region agent log
-      fetch("http://127.0.0.1:7747/ingest/35cfc354-c5ae-4432-bd72-d21a2a14ee0c",{method:"POST",headers:{"Content-Type":"application/json","X-Debug-Session-Id":"cebf2c"},body:JSON.stringify({sessionId:"cebf2c",runId:"initial",hypothesisId:"H2",location:"lib/store/app-store.tsx:hydrate",message:"Hydrated local state",data:{hasRaw:Boolean(raw),posts:parsed.posts?.length ?? -1,users:parsed.users?.length ?? -1},timestamp:Date.now()})}).catch(()=>{})
-      // #endregion
     } catch {
-      // #region agent log
-      fetch("http://127.0.0.1:7747/ingest/35cfc354-c5ae-4432-bd72-d21a2a14ee0c",{method:"POST",headers:{"Content-Type":"application/json","X-Debug-Session-Id":"cebf2c"},body:JSON.stringify({sessionId:"cebf2c",runId:"initial",hypothesisId:"H4",location:"lib/store/app-store.tsx:hydrate",message:"Hydrate parse failed",data:{},timestamp:Date.now()})}).catch(()=>{})
-      // #endregion
+      // ignore parse errors
     } finally {
       setIsHydrated(true)
     }
@@ -121,9 +111,6 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
       verifiedPostIds,
     }
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot))
-    // #region agent log
-    fetch("http://127.0.0.1:7747/ingest/35cfc354-c5ae-4432-bd72-d21a2a14ee0c",{method:"POST",headers:{"Content-Type":"application/json","X-Debug-Session-Id":"cebf2c"},body:JSON.stringify({sessionId:"cebf2c",runId:"initial",hypothesisId:"H3",location:"lib/store/app-store.tsx:persist",message:"Persisted local state",data:{posts:posts.length,users:users.length,claims:claims.length},timestamp:Date.now()})}).catch(()=>{})
-    // #endregion
   }, [users, posts, claims, withdrawals, currentUser, rewardEligibilities, isHydrated])
 
   const login = React.useCallback(
@@ -134,16 +121,20 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
         return { ok: false, message: "Утас эсвэл имэйл, нууц үг буруу байна." }
       }
       setCurrentUser(u)
-      // #region agent log
-      fetch("http://127.0.0.1:7747/ingest/35cfc354-c5ae-4432-bd72-d21a2a14ee0c",{method:"POST",headers:{"Content-Type":"application/json","X-Debug-Session-Id":"cebf2c"},body:JSON.stringify({sessionId:"cebf2c",runId:"initial",hypothesisId:"H1",location:"lib/store/app-store.tsx:login",message:"Login success",data:{userId:u.id},timestamp:Date.now()})}).catch(()=>{})
-      // #endregion
       return { ok: true }
     },
     [users]
   )
 
   const signup = React.useCallback(
-    (payload: { sisiId: string; phone: string; email: string; password: string; facebook?: string; name: string }) => {
+    (payload: {
+      sisiId: string
+      phone: string
+      email: string
+      password: string
+      facebook?: string
+      name: string
+    }) => {
       if (users.some((u) => u.sisiId === payload.sisiId.trim())) {
         return { ok: false, message: "Энэ SISI ID аль хэдийн бүртгэлтэй." }
       }
@@ -171,9 +162,6 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
   const addPost = React.useCallback((post: Omit<Post, "id" | "status"> & { status?: PostStatus }) => {
     const p: Post = { ...post, id: `p-${Date.now()}`, status: post.status ?? "published" }
     setPosts((prev) => [p, ...prev])
-    // #region agent log
-    fetch("http://127.0.0.1:7747/ingest/35cfc354-c5ae-4432-bd72-d21a2a14ee0c",{method:"POST",headers:{"Content-Type":"application/json","X-Debug-Session-Id":"cebf2c"},body:JSON.stringify({sessionId:"cebf2c",runId:"initial",hypothesisId:"H3",location:"lib/store/app-store.tsx:addPost",message:"Post added",data:{postId:p.id,authorId:p.authorId,status:p.status},timestamp:Date.now()})}).catch(()=>{})
-    // #endregion
     return p
   }, [])
 
@@ -186,7 +174,9 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
       const post = posts.find((p) => p.id === postId)
       if (!post || post.type !== "found") return { ok: false, message: "Зар олдсонгүй." }
       const expected = post.correctAnswer
-      if (!expected) return { ok: false, message: "Баталгаажуулалт тохируулаагүй." }
+      if (!expected) {
+        return { ok: false, message: "Баталгаажуулалт тохируулаагүй." }
+      }
       if (normalizeAnswer(answer) !== normalizeAnswer(expected)) {
         return { ok: false, message: "Хариулт таарахгүй байна." }
       }
@@ -311,10 +301,16 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
   const getMyClaims = React.useCallback(() => (currentUser ? claims.filter((c) => c.claimantId === currentUser.id) : []), [claims, currentUser])
 
   const submitWithdrawal = React.useCallback(
-    (payload: { postId: string; amount: number; bankName: string; accountNumber: string }) => {
+    (payload: {
+      postId: string
+      amount: number
+      bankName: string
+      accountNumber: string
+    }) => {
       if (!currentUser) return
+      const id = `w-${Date.now()}`
       const row: WithdrawalRequest = {
-        id: `w-${Date.now()}`,
+        id,
         userId: currentUser.id,
         postId: payload.postId,
         amount: payload.amount,
@@ -326,7 +322,10 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
       setWithdrawals((prev) => [...prev, row])
       setRewardEligibilities((prev) => {
         const list = prev[currentUser.id] ?? []
-        return { ...prev, [currentUser.id]: list.filter((e) => e.postId !== payload.postId) }
+        return {
+          ...prev,
+          [currentUser.id]: list.filter((e) => e.postId !== payload.postId),
+        }
       })
     },
     [currentUser]
@@ -392,8 +391,8 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
       getMyClaims,
       submitWithdrawal,
       completeWithdrawal,
-      getUserById,
       updateCurrentUserProfile,
+      getUserById,
     }),
     [
       users,
@@ -417,8 +416,8 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
       getMyClaims,
       submitWithdrawal,
       completeWithdrawal,
-      getUserById,
       updateCurrentUserProfile,
+      getUserById,
     ]
   )
 
