@@ -75,6 +75,7 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
   const [withdrawals, setWithdrawals] = React.useState<WithdrawalRequest[]>(INITIAL_WITHDRAWALS)
   const [currentUser, setCurrentUser] = React.useState<User | null>(null)
   const [rewardEligibilities, setRewardEligibilities] = React.useState<Record<string, RewardEligibility[]>>({})
+  const [verifiedPostIds, setVerifiedPostIds] = React.useState<Record<string, string[]>>({})
   const [isHydrated, setIsHydrated] = React.useState(false)
 
   React.useEffect(() => {
@@ -87,7 +88,11 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
       }
       const parsed = JSON.parse(raw) as Partial<AppState>
       if (parsed.users) setUsers(parsed.users)
-      if (parsed.posts) setPosts(parsed.posts)
+      if (parsed.posts) {
+        const savedIds = new Set(parsed.posts.map((p) => p.id))
+        const newMockPosts = INITIAL_POSTS.filter((p) => !savedIds.has(p.id))
+        setPosts([...parsed.posts, ...newMockPosts])
+      }
       if (parsed.claims) setClaims(parsed.claims)
       if (parsed.withdrawals) setWithdrawals(parsed.withdrawals)
       if (parsed.currentUser !== undefined) setCurrentUser(parsed.currentUser ?? null)
@@ -113,6 +118,7 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
       withdrawals,
       currentUser,
       rewardEligibilities,
+      verifiedPostIds,
     }
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot))
     // #region agent log
@@ -191,6 +197,28 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
           const list = prev[uid] ?? []
           if (list.some((e) => e.postId === postId)) return prev
           return { ...prev, [uid]: [...list, { postId, amount: rewardAmount }] }
+        })
+      }
+      return { ok: true }
+    },
+    [posts, currentUser]
+  )
+
+  const verifyLostAnswer = React.useCallback(
+    (postId: string, answer: string) => {
+      const post = posts.find((p) => p.id === postId)
+      if (!post || post.type !== "lost") return { ok: false, message: "Зар олдсонгүй." }
+      const expected = post.correctAnswer
+      if (!expected) return { ok: false, message: "Баталгаажуулалт тохируулаагүй." }
+      if (normalizeAnswer(answer) !== normalizeAnswer(expected)) {
+        return { ok: false, message: "Хариулт таарахгүй байна." }
+      }
+      if (currentUser) {
+        setVerifiedPostIds((prev) => {
+          const uid = currentUser.id
+          const list = prev[uid] ?? []
+          if (list.includes(postId)) return prev
+          return { ...prev, [uid]: [...list, postId] }
         })
       }
       return { ok: true }
@@ -355,6 +383,8 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
       addPost,
       updatePostStatus,
       verifyFoundAnswer,
+      verifyLostAnswer,
+      verifiedPostIds,
       submitClaim,
       approveClaim,
       rejectClaim,
@@ -378,6 +408,8 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
       addPost,
       updatePostStatus,
       verifyFoundAnswer,
+      verifyLostAnswer,
+      verifiedPostIds,
       submitClaim,
       approveClaim,
       rejectClaim,
