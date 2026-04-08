@@ -25,7 +25,7 @@ export const MOCK_LOCATIONS = [
 export const INITIAL_USERS: User[] = [
   {
     id: "u-admin",
-    sisiId: "ADMIN01",
+    sisiId: "20b1num0001",
     phone: "99110011",
     email: "admin@num.edu.mn",
     name: "Админ Хэрэглэгч",
@@ -34,7 +34,7 @@ export const INITIAL_USERS: User[] = [
   },
   {
     id: "u-1",
-    sisiId: "B21190123",
+    sisiId: "21b1num0123",
     phone: "88112233",
     email: "bold@num.edu.mn",
     facebook: "bold.num",
@@ -43,7 +43,7 @@ export const INITIAL_USERS: User[] = [
   },
   {
     id: "u-2",
-    sisiId: "C20180456",
+    sisiId: "20b1num0456",
     phone: "89991122",
     email: "saraa@num.edu.mn",
     name: "Сараа Эрдэнэ",
@@ -51,7 +51,7 @@ export const INITIAL_USERS: User[] = [
   },
   {
     id: "u-3",
-    sisiId: "A22110234",
+    sisiId: "22b1num0234",
     phone: "88119900",
     email: "temuulen@num.edu.mn",
     name: "Тэмүүлэн Бат",
@@ -59,7 +59,7 @@ export const INITIAL_USERS: User[] = [
   },
   {
     id: "u-4",
-    sisiId: "D24123456",
+    sisiId: "24b1num3456",
     phone: "88000000",
     email: "engin@num.edu.mn",
     name: "Хэрэглэгч",
