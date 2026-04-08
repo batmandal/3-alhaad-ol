@@ -26,6 +26,7 @@ interface AppState {
   withdrawals: WithdrawalRequest[]
   currentUser: User | null
   rewardEligibilities: Record<string, RewardEligibility[]>
+  verifiedPostIds: Record<string, string[]>
 }
 
 interface AppContextValue extends AppState {
@@ -42,6 +43,8 @@ interface AppContextValue extends AppState {
   addPost: (post: Omit<Post, "id" | "status"> & { status?: PostStatus }) => Post
   updatePostStatus: (id: string, status: PostStatus) => void
   verifyFoundAnswer: (postId: string, answer: string) => { ok: boolean; message?: string }
+  verifyLostAnswer: (postId: string, answer: string) => { ok: boolean; message?: string }
+  verifiedPostIds: Record<string, string[]>
   submitClaim: (postId: string, answers: string[]) => { ok: boolean; message?: string; claimId?: string }
   approveClaim: (claimId: string) => void
   rejectClaim: (claimId: string) => void

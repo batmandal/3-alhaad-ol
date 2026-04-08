@@ -54,7 +54,7 @@ export function SignupForm({
           className={authInputClassName}
           value={sisiId}
           onChange={(e) => setSisiId(e.target.value)}
-          placeholder="B21190123"
+          placeholder="24b1num0989"
           required
         />
       </div>
