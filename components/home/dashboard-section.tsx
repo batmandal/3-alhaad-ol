@@ -67,10 +67,6 @@ export default function DashboardSection() {
               Манай сайтын статистик
             </h2>
           </div>
-          <p className="max-w-md text-sm text-slate-500">
-            Сайт дээрх одоогийн өгөгдөл дээр үндэслэн автоматаар тооцоолсон
-            үзүүлэлтүүд.
-          </p>
         </div>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
