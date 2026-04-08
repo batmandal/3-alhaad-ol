@@ -4,6 +4,7 @@ import * as React from "react"
 import type { PostType } from "@/lib/types"
 import { HeroSection } from "@/components/home/hero-section"
 import { FeedSection } from "@/components/home/feed-section"
+import DashboardSection from "@/components/home/dashboard-section"
 import { CreatePostDialog } from "@/components/home/create-post-dialog"
 import {
   Dialog,
@@ -43,6 +44,7 @@ export function HomePageClient() {
     <>
       <HeroSection onLost={() => openCreate("lost")} onFound={() => openCreate("found")} />
       <FeedSection />
+      <DashboardSection /> 
       <CreatePostDialog
         open={createOpen}
         onOpenChange={(o) => {
