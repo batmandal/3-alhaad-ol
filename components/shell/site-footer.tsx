@@ -57,7 +57,7 @@ export function SiteFooter() {
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li>
                 <Link
-                  href="#"
+                  href="/#faq"
                   className="hover:text-teal-500 transition-colors"
                 >
                   Түгээмэл асуултууд

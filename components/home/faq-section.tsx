@@ -14,7 +14,7 @@ export default function FaqSection() {
       : FAQ_DATA.filter((f) => f.category === activeCategory)
 
   return (
-    <section className="mx-auto max-w-3xl px-4 py-12">
+    <section id="faq" className="mx-auto max-w-3xl px-4 py-12">
       <h2 className="text-2xl font-bold mb-2 text-center">Түгээмэл асуулт хариулт</h2>
       <p className="text-center text-sm text-muted-foreground mb-8">
         Сайтыг ашиглахтай холбоотой нийтлэг асуултуудын хариулт
