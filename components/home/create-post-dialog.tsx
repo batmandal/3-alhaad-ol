@@ -37,7 +37,7 @@ import {
   postTextareaClassName,
 } from "@/components/home/create-post-dialog-classes"
 import { cn } from "@/lib/utils"
-import { HelpCircle } from "lucide-react"
+import { HelpCircle, ImagePlus } from "lucide-react"
 
 type Step = "form" | "payment"
 
@@ -56,6 +56,7 @@ export function CreatePostDialog({
   const [step, setStep] = React.useState<Step>("form")
   const [pendingId, setPendingId] = React.useState<string | null>(null)
   const [error, setError] = React.useState<string | null>(null)
+
   const [type, setType] = React.useState<PostType>("lost")
   const [title, setTitle] = React.useState("")
   const [description, setDescription] = React.useState("")
@@ -65,11 +66,15 @@ export function CreatePostDialog({
   const [verificationQuestion, setVerificationQuestion] = React.useState("")
   const [correctAnswer, setCorrectAnswer] = React.useState("")
 
+  const [selectedImage, setSelectedImage] = React.useState("")
+  const [imageError, setImageError] = React.useState<string | null>(null)
+
   React.useEffect(() => {
     if (!open) return
     setStep("form")
     setPendingId(null)
     setError(null)
+    setImageError(null)
     if (initialType) setType(initialType)
   }, [open, initialType])
 
@@ -81,6 +86,8 @@ export function CreatePostDialog({
     setDate(new Date().toISOString().slice(0, 10))
     setVerificationQuestion("")
     setCorrectAnswer("")
+    setSelectedImage("")
+    setImageError(null)
   }
 
   function handleClose(next: boolean) {
@@ -88,14 +95,54 @@ export function CreatePostDialog({
     onOpenChange(next)
   }
 
+  function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+
+    if (!file) return
+
+    if (!file.type.startsWith("image/")) {
+      setSelectedImage("")
+      setImageError("Зөвхөн зураг файл оруулна уу.")
+      return
+    }
+
+    if (file.size > 3 * 1024 * 1024) {
+      setSelectedImage("")
+      setImageError("Зураг 3MB-аас бага байх ёстой.")
+      return
+    }
+
+    const reader = new FileReader()
+
+    reader.onloadend = () => {
+      setSelectedImage(reader.result as string)
+      setImageError(null)
+    }
+
+    reader.readAsDataURL(file)
+  }
+
   function onSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
+    setImageError(null)
+
     if (!currentUser) {
       onRequireAuth?.()
       setError("Зар оруулахын тулд нэвтэрнэ үү.")
       return
     }
+
+    if (!title.trim() || !description.trim()) {
+      setError("Гарчиг болон тайлбар заавал бөглөнө үү.")
+      return
+    }
+
+    if (!selectedImage) {
+      setImageError("Зар оруулахын тулд зураг сонгоно уу.")
+      return
+    }
+
     if (!verificationQuestion.trim() || !correctAnswer.trim()) {
       setError("Баталгаажуулах асуулт, зөв хариулт заавал.")
       return
@@ -108,12 +155,13 @@ export function CreatePostDialog({
       category,
       location,
       date,
-      imageUrl: MOCK_IMAGE,
+      imageUrl: selectedImage,
       authorId: currentUser.id,
       verificationQuestion: verificationQuestion.trim(),
       correctAnswer: correctAnswer.trim(),
       status: "pending_payment",
     })
+
     setPendingId(created.id)
     setStep("payment")
   }
@@ -130,15 +178,22 @@ export function CreatePostDialog({
         {step === "form" ? (
           <>
             <DialogHeader>
-              <DialogTitle className={postDialogTitleClassName}>Шинэ зар оруулах</DialogTitle>
+              <DialogTitle className={postDialogTitleClassName}>
+                Шинэ зар оруулах
+              </DialogTitle>
               <DialogDescription className={postDialogDescriptionClassName}>
-                Баталгаажуулах асуулт заавал бөглөнө үү.
+                Зураг болон баталгаажуулах асуулт заавал бөглөнө үү.
               </DialogDescription>
             </DialogHeader>
+
             <form className="grid gap-4" onSubmit={onSubmit}>
               <div className="grid gap-2">
                 <Label className={postLabelClassName}>Төрөл</Label>
-                <Select value={type} onValueChange={(v) => v && setType(v as PostType)} disabled={!!initialType}>
+                <Select
+                  value={type}
+                  onValueChange={(v) => v && setType(v as PostType)}
+                  disabled={!!initialType}
+                >
                   <SelectTrigger className={postSelectTriggerClassName}>
                     <SelectValue />
                   </SelectTrigger>
@@ -148,47 +203,119 @@ export function CreatePostDialog({
                   </SelectContent>
                 </Select>
               </div>
+
               <div className="grid gap-2">
                 <Label className={postLabelClassName}>Гарчиг</Label>
-                <Input className={postInputClassName} value={title} onChange={(e) => setTitle(e.target.value)} required />
+                <Input
+                  className={postInputClassName}
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  required
+                />
               </div>
+
               <div className="grid gap-2">
                 <Label className={postLabelClassName}>Тайлбар</Label>
-                <Textarea className={postTextareaClassName} value={description} onChange={(e) => setDescription(e.target.value)} required />
+                <Textarea
+                  className={postTextareaClassName}
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  required
+                />
               </div>
+
+              <div className="grid gap-2 rounded-2xl border border-dashed border-border bg-muted/30 p-4">
+                <div className="flex items-center gap-2">
+                  <ImagePlus className="size-5 text-muted-foreground" />
+                  <Label className={postLabelClassName}>Зураг *</Label>
+                </div>
+
+                <Input
+                  type="file"
+                  accept="image/*"
+                  className={postInputClassName}
+                  onChange={handleImageChange}
+                />
+
+                <p className="text-xs text-muted-foreground">
+                  JPG, PNG, WEBP зэрэг зураг оруулж болно. Хэмжээ 3MB-аас бага байна.
+                </p>
+
+                {imageError && (
+                  <p className="text-sm text-destructive">{imageError}</p>
+                )}
+
+                {selectedImage && (
+                  <div className="overflow-hidden rounded-2xl border border-border bg-background">
+                    <img
+                      src={selectedImage}
+                      alt="Сонгосон зураг"
+                      className="h-48 w-full object-cover"
+                    />
+                  </div>
+                )}
+              </div>
+
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="grid gap-2">
                   <Label className={postLabelClassName}>Ангилал</Label>
                   <Select value={category} onValueChange={(v) => v && setCategory(v)}>
-                    <SelectTrigger className={postSelectTriggerClassName}><SelectValue /></SelectTrigger>
-                    <SelectContent>{MOCK_CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                    <SelectTrigger className={postSelectTriggerClassName}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {MOCK_CATEGORIES.map((c) => (
+                        <SelectItem key={c} value={c}>
+                          {c}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
                   </Select>
                 </div>
+
                 <div className="grid gap-2">
                   <Label className={postLabelClassName}>Байршил</Label>
                   <Select value={location} onValueChange={(v) => v && setLocation(v)}>
-                    <SelectTrigger className={postSelectTriggerClassName}><SelectValue /></SelectTrigger>
-                    <SelectContent>{MOCK_LOCATIONS.map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}</SelectContent>
+                    <SelectTrigger className={postSelectTriggerClassName}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {MOCK_LOCATIONS.map((l) => (
+                        <SelectItem key={l} value={l}>
+                          {l}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
                   </Select>
                 </div>
               </div>
+
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="grid gap-2">
                   <Label className={postLabelClassName}>Огноо</Label>
-                  <Input type="date" className={postInputClassName} value={date} onChange={(e) => setDate(e.target.value)} required />
+                  <Input
+                    type="date"
+                    className={postInputClassName}
+                    value={date}
+                    onChange={(e) => setDate(e.target.value)}
+                    required
+                  />
                 </div>
               </div>
+
               <div className="space-y-4 rounded-2xl border border-teal-200/70 bg-gradient-to-br from-teal-50/80 to-emerald-50/40 p-4 shadow-sm ring-1 ring-teal-500/10 dark:border-teal-900/50 dark:from-teal-950/30 dark:to-emerald-950/20 dark:ring-teal-500/5">
                 <div className="flex items-start gap-3">
                   <div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-teal-400 to-emerald-600 text-white shadow-md shadow-teal-500/25">
                     <HelpCircle className="size-5" />
                   </div>
+
                   <div>
                     <h4 className="text-sm font-bold text-foreground">
                       Баталгаажуулах асуулт *
                     </h4>
                     <p className="text-xs leading-relaxed text-muted-foreground">
-                      {type === "found" ? "Эзнийг" : "Олсон хүнийг"} тогтоох асуулт (заавал)
+                      {type === "found" ? "Эзнийг" : "Олсон хүнийг"} тогтоох асуулт
+                      заавал оруулна.
                     </p>
                   </div>
                 </div>
@@ -204,6 +331,7 @@ export function CreatePostDialog({
                       required
                     />
                   </div>
+
                   <div className="grid gap-2">
                     <Label className={postLabelClassName}>Зөв хариулт *</Label>
                     <Input
@@ -216,12 +344,23 @@ export function CreatePostDialog({
                   </div>
                 </div>
               </div>
+
               {error && <p className="text-sm text-destructive">{error}</p>}
+
               <DialogFooter className={cn(postDialogFooterClassName, "mx-0! mb-0!")}>
-                <Button type="button" variant="outline" className={postCancelButtonClassName} onClick={() => handleClose(false)}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className={postCancelButtonClassName}
+                  onClick={() => handleClose(false)}
+                >
                   Болих
                 </Button>
-                <Button type="submit" className={type === "lost" ? postSubmitButtonLost : postSubmitButtonFound}>
+
+                <Button
+                  type="submit"
+                  className={type === "lost" ? postSubmitButtonLost : postSubmitButtonFound}
+                >
                   Нийтлэх
                 </Button>
               </DialogFooter>
@@ -230,13 +369,24 @@ export function CreatePostDialog({
         ) : (
           <>
             <DialogHeader>
-              <DialogTitle className={postDialogTitleClassName}>Төлбөр төлөх</DialogTitle>
+              <DialogTitle className={postDialogTitleClassName}>
+                Төлбөр төлөх
+              </DialogTitle>
             </DialogHeader>
-            <p className="text-sm text-muted-foreground">QPay төлбөр хийсний дараа нийтлэгдэнэ.</p>
+
+            <p className="text-sm text-muted-foreground">
+              QPay төлбөр хийсний дараа нийтлэгдэнэ.
+            </p>
+
             <DialogFooter className={cn(postDialogFooterClassName, "mx-0! mb-0!")}>
-              <Button variant="outline" className={postCancelButtonClassName} onClick={() => handleClose(false)}>
+              <Button
+                variant="outline"
+                className={postCancelButtonClassName}
+                onClick={() => handleClose(false)}
+              >
                 Хаах
               </Button>
+
               <Button className={postSubmitButtonFound} onClick={verifyPayment}>
                 Төлбөр шалгах
               </Button>
@@ -247,6 +397,3 @@ export function CreatePostDialog({
     </Dialog>
   )
 }
-
-const MOCK_IMAGE =
-  "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=600&q=80"
