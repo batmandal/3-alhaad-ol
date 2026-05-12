@@ -9,3 +9,6 @@ router.post("/login", ctrl.login)
 router.get("/me", requireAuth, ctrl.me)
 
 module.exports = router
+router.post("/logout", (req, res) => {
+  res.json({ success: true, message: "Logged out successfully" });
+});
