@@ -1,7 +1,8 @@
 const User = require("../models/User")
 const { signToken } = require("../utils/jwt")
 
-exports.signup = async (req, res, next) => {
+// Signup гэснийг Register болгож өөрчлөв (Routes-тэйгээ ижил болгох)
+exports.register = async (req, res, next) => {
   try {
     const { sisiId, phone, email, password, facebook, name } = req.body
     if (!sisiId || !phone || !email || !password || !name) {
