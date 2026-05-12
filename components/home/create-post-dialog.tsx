@@ -39,7 +39,10 @@ import {
 import { cn } from "@/lib/utils"
 import { HelpCircle, ImagePlus } from "lucide-react"
 
-type Step = "form" | "payment"
+type Step = "form" | "payment" | "success"
+
+const PAYMENT_AMOUNT = 1000
+const QPAY_QR_SRC = "/payment/qpay-qr.png"
 
 export function CreatePostDialog({
   open,
@@ -52,9 +55,9 @@ export function CreatePostDialog({
   initialType: PostType | null
   onRequireAuth?: () => void
 }) {
-  const { currentUser, addPost, updatePostStatus } = useAppStore()
+  const { currentUser, addPost } = useAppStore()
+
   const [step, setStep] = React.useState<Step>("form")
-  const [pendingId, setPendingId] = React.useState<string | null>(null)
   const [error, setError] = React.useState<string | null>(null)
 
   const [type, setType] = React.useState<PostType>("lost")
@@ -62,7 +65,9 @@ export function CreatePostDialog({
   const [description, setDescription] = React.useState("")
   const [category, setCategory] = React.useState<string>(MOCK_CATEGORIES[0])
   const [location, setLocation] = React.useState<string>(MOCK_LOCATIONS[0])
-  const [date, setDate] = React.useState(() => new Date().toISOString().slice(0, 10))
+  const [date, setDate] = React.useState(() =>
+    new Date().toISOString().slice(0, 10),
+  )
   const [verificationQuestion, setVerificationQuestion] = React.useState("")
   const [correctAnswer, setCorrectAnswer] = React.useState("")
 
@@ -71,11 +76,14 @@ export function CreatePostDialog({
 
   React.useEffect(() => {
     if (!open) return
+
     setStep("form")
-    setPendingId(null)
     setError(null)
     setImageError(null)
-    if (initialType) setType(initialType)
+
+    if (initialType) {
+      setType(initialType)
+    }
   }, [open, initialType])
 
   function resetFields() {
@@ -88,10 +96,14 @@ export function CreatePostDialog({
     setCorrectAnswer("")
     setSelectedImage("")
     setImageError(null)
+    setError(null)
   }
 
   function handleClose(next: boolean) {
-    if (!next) resetFields()
+    if (!next) {
+      resetFields()
+    }
+
     onOpenChange(next)
   }
 
@@ -124,6 +136,7 @@ export function CreatePostDialog({
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault()
+
     setError(null)
     setImageError(null)
 
@@ -148,7 +161,7 @@ export function CreatePostDialog({
       return
     }
 
-    const created = addPost({
+    addPost({
       type,
       title: title.trim(),
       description: description.trim(),
@@ -162,12 +175,14 @@ export function CreatePostDialog({
       status: "pending_payment",
     })
 
-    setPendingId(created.id)
     setStep("payment")
   }
 
-  function verifyPayment() {
-    if (pendingId) updatePostStatus(pendingId, "published")
+  function submitPaymentRequest() {
+    setStep("success")
+  }
+
+  function finishSuccess() {
     resetFields()
     handleClose(false)
   }
@@ -238,7 +253,8 @@ export function CreatePostDialog({
                 />
 
                 <p className="text-xs text-muted-foreground">
-                  JPG, PNG, WEBP зэрэг зураг оруулж болно. Хэмжээ 3MB-аас бага байна.
+                  JPG, PNG, WEBP зэрэг зураг оруулж болно. Хэмжээ 3MB-аас бага
+                  байна.
                 </p>
 
                 {imageError && (
@@ -259,7 +275,10 @@ export function CreatePostDialog({
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="grid gap-2">
                   <Label className={postLabelClassName}>Ангилал</Label>
-                  <Select value={category} onValueChange={(v) => v && setCategory(v)}>
+                  <Select
+                    value={category}
+                    onValueChange={(v) => v && setCategory(v)}
+                  >
                     <SelectTrigger className={postSelectTriggerClassName}>
                       <SelectValue />
                     </SelectTrigger>
@@ -275,7 +294,10 @@ export function CreatePostDialog({
 
                 <div className="grid gap-2">
                   <Label className={postLabelClassName}>Байршил</Label>
-                  <Select value={location} onValueChange={(v) => v && setLocation(v)}>
+                  <Select
+                    value={location}
+                    onValueChange={(v) => v && setLocation(v)}
+                  >
                     <SelectTrigger className={postSelectTriggerClassName}>
                       <SelectValue />
                     </SelectTrigger>
@@ -290,17 +312,15 @@ export function CreatePostDialog({
                 </div>
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="grid gap-2">
-                  <Label className={postLabelClassName}>Огноо</Label>
-                  <Input
-                    type="date"
-                    className={postInputClassName}
-                    value={date}
-                    onChange={(e) => setDate(e.target.value)}
-                    required
-                  />
-                </div>
+              <div className="grid gap-2">
+                <Label className={postLabelClassName}>Огноо</Label>
+                <Input
+                  type="date"
+                  className={postInputClassName}
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  required
+                />
               </div>
 
               <div className="space-y-4 rounded-2xl border border-teal-200/70 bg-gradient-to-br from-teal-50/80 to-emerald-50/40 p-4 shadow-sm ring-1 ring-teal-500/10 dark:border-teal-900/50 dark:from-teal-950/30 dark:to-emerald-950/20 dark:ring-teal-500/5">
@@ -314,8 +334,8 @@ export function CreatePostDialog({
                       Баталгаажуулах асуулт *
                     </h4>
                     <p className="text-xs leading-relaxed text-muted-foreground">
-                      {type === "found" ? "Эзнийг" : "Олсон хүнийг"} тогтоох асуулт
-                      заавал оруулна.
+                      {type === "found" ? "Эзнийг" : "Олсон хүнийг"} тогтоох
+                      асуулт заавал оруулна.
                     </p>
                   </div>
                 </div>
@@ -347,7 +367,9 @@ export function CreatePostDialog({
 
               {error && <p className="text-sm text-destructive">{error}</p>}
 
-              <DialogFooter className={cn(postDialogFooterClassName, "mx-0! mb-0!")}>
+              <DialogFooter
+                className={cn(postDialogFooterClassName, "mx-0! mb-0!")}
+              >
                 <Button
                   type="button"
                   variant="outline"
@@ -359,26 +381,66 @@ export function CreatePostDialog({
 
                 <Button
                   type="submit"
-                  className={type === "lost" ? postSubmitButtonLost : postSubmitButtonFound}
+                  className={
+                    type === "lost" ? postSubmitButtonLost : postSubmitButtonFound
+                  }
                 >
                   Нийтлэх
                 </Button>
               </DialogFooter>
             </form>
           </>
-        ) : (
+        ) : step === "payment" ? (
           <>
             <DialogHeader>
               <DialogTitle className={postDialogTitleClassName}>
                 Төлбөр төлөх
               </DialogTitle>
+              <DialogDescription className={postDialogDescriptionClassName}>
+                Доорх QR кодоор төлбөрөө шилжүүлээд “Би төлбөрөө төлсөн” товчийг
+                дарна уу.
+              </DialogDescription>
             </DialogHeader>
 
-            <p className="text-sm text-muted-foreground">
-              QPay төлбөр хийсний дараа нийтлэгдэнэ.
-            </p>
+            <div className="grid gap-4">
+              <div className="rounded-2xl border border-border bg-muted/30 p-4 text-center">
+                <p className="text-sm text-muted-foreground">Төлөх дүн</p>
+                <p className="mt-1 text-2xl font-bold text-foreground">
+                  {PAYMENT_AMOUNT.toLocaleString()}₮
+                </p>
+              </div>
 
-            <DialogFooter className={cn(postDialogFooterClassName, "mx-0! mb-0!")}>
+              <div className="rounded-2xl border border-border bg-background p-4">
+                <div className="mx-auto flex max-w-xs flex-col items-center gap-3">
+                  <img
+                    src={QPAY_QR_SRC}
+                    alt="QPay QR"
+                    className="h-56 w-56 rounded-xl border border-border bg-white object-contain p-2"
+                  />
+
+                  <div className="text-center">
+                    <p className="text-sm font-semibold text-foreground">
+                      QPay / банкны QR
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Өөрийн банкны апп-аар QR кодыг уншуулж төлнө.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                <p className="font-semibold">Анхааруулга</p>
+                <p className="mt-1">
+                  Төлбөр хийсний дараа таны зар шууд нийтлэгдэхгүй. Admin
+                  төлбөрийг шалгаж баталгаажуулсны дараа нийтлэгдэнэ.
+                </p>
+              </div>
+            </div>
+
+            <DialogFooter
+              className={cn(postDialogFooterClassName, "mx-0! mb-0!")}
+            >
               <Button
                 variant="outline"
                 className={postCancelButtonClassName}
@@ -387,8 +449,45 @@ export function CreatePostDialog({
                 Хаах
               </Button>
 
-              <Button className={postSubmitButtonFound} onClick={verifyPayment}>
-                Төлбөр шалгах
+              <Button
+                className={postSubmitButtonFound}
+                onClick={submitPaymentRequest}
+              >
+                Би төлбөрөө төлсөн
+              </Button>
+            </DialogFooter>
+          </>
+        ) : (
+          <>
+            <DialogHeader>
+              <DialogTitle className={postDialogTitleClassName}>
+                Зар амжилттай орууллаа
+              </DialogTitle>
+              <DialogDescription className={postDialogDescriptionClassName}>
+                Таны зар admin шалгах хэсэг рүү илгээгдлээ.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-center text-emerald-900">
+              <div className="mx-auto mb-3 flex size-12 items-center justify-center rounded-full bg-emerald-600 text-xl font-bold text-white">
+                ✓
+              </div>
+
+              <p className="text-base font-semibold">
+                Зар амжилттай бүртгэгдлээ
+              </p>
+
+              <p className="mt-2 text-sm">
+                Admin төлбөрийг шалгаж баталгаажуулсны дараа таны зар нийтэд
+                харагдах болно.
+              </p>
+            </div>
+
+            <DialogFooter
+              className={cn(postDialogFooterClassName, "mx-0! mb-0!")}
+            >
+              <Button className={postSubmitButtonFound} onClick={finishSuccess}>
+                Дуусгах
               </Button>
             </DialogFooter>
           </>
