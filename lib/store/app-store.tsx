@@ -14,6 +14,7 @@ import type {
 } from "@/lib/types"
 
 const STORAGE_KEY = "lostfound.appstate.v1"
+const BACKEND_URL = "http://localhost:8080"
 
 function normalizeAnswer(s: string) {
   return s.trim().toLowerCase().replace(/\s+/g, " ")
@@ -75,6 +76,46 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
 
   React.useEffect(() => {
     if (typeof window === "undefined") return
+    
+    // Fetch posts from backend
+    const fetchBackendPosts = async () => {
+      try {
+        const response = await fetch(`${BACKEND_URL}/api/posts`)
+        if (!response.ok) throw new Error("Failed to fetch posts")
+        
+        const data = await response.json()
+        if (data.data && Array.isArray(data.data)) {
+          // Transform backend posts to frontend format
+          const backendPosts = data.data.map((p: any) => ({
+            id: p.id,
+            type: p.type,
+            title: p.title,
+            description: p.description,
+            category: p.category,
+            location: p.location,
+            date: p.date || new Date().toISOString().split('T')[0],
+            imageUrl: p.imageUrl,
+            authorId: p.authorId || p.author,
+            status: p.status || "published",
+            rewardAmount: p.rewardAmount,
+            verificationQuestion: p.verificationQuestion,
+            correctAnswer: p.correctAnswer,
+            finderRewardAmount: p.finderRewardAmount,
+          }))
+          
+          // Merge backend posts with mock posts, avoiding duplicates
+          const backendIds = new Set(backendPosts.map((p: Post) => p.id))
+          const mockPostsToAdd = INITIAL_POSTS.filter((p) => !backendIds.has(p.id))
+          setPosts([...backendPosts, ...mockPostsToAdd])
+        }
+      } catch (error) {
+        console.warn("Could not fetch from backend, using mock data:", error)
+        // Fallback to mock data if backend is unavailable
+      }
+    }
+
+    fetchBackendPosts()
+    
     try {
       const raw = window.localStorage.getItem(STORAGE_KEY)
       if (!raw) {
@@ -83,11 +124,6 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
       }
       const parsed = JSON.parse(raw) as Partial<AppState>
       if (parsed.users) setUsers(parsed.users)
-      if (parsed.posts) {
-        const savedIds = new Set(parsed.posts.map((p) => p.id))
-        const newMockPosts = INITIAL_POSTS.filter((p) => !savedIds.has(p.id))
-        setPosts([...parsed.posts, ...newMockPosts])
-      }
       if (parsed.claims) setClaims(parsed.claims)
       if (parsed.withdrawals) setWithdrawals(parsed.withdrawals)
       if (parsed.currentUser !== undefined) setCurrentUser(parsed.currentUser ?? null)
