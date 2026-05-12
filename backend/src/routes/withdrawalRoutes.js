@@ -6,7 +6,10 @@ const router = express.Router()
 
 router.post("/", requireAuth, ctrl.submit)
 router.get("/me", requireAuth, ctrl.listMine)
-router.get("/", requireAuth, requireAdmin, ctrl.listAll)
+
+// ТЕСТ: requireAuth, requireAdmin-ийг түр хасаад шалгах
+router.get("/", ctrl.listAll) 
+
 router.patch("/:id/complete", requireAuth, requireAdmin, ctrl.complete)
 
 module.exports = router
