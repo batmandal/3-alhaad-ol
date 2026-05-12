@@ -6,6 +6,8 @@ const Post = require("../models/Post")
 const Faq = require("../models/Faq")
 const Transaction = require("../models/Transaction")
 const SecurityLog = require("../models/SecurityLog")
+const Claim = require("../models/Claim")
+const Withdrawal = require("../models/Withdrawal")
 
 const SEED_USERS = [
   { sisiId: "20b1num0001", phone: "99110011", email: "admin@num.edu.mn", name: "Админ Хэрэглэгч", isAdmin: true, password: "admin" },
@@ -94,6 +96,50 @@ const SEED_SECURITY_LOGS = [
   { timestamp: "2026-03-27 09:55", email: "admin@num.edu.mn", action: "Админ хэрэглэгч нэмсэн", severity: "warning", ip: "10.0.0.1" },
 ]
 
+const SEED_CLAIMS = [
+  {
+    postTitle: "AirPods Pro алдсан",
+    postType: "lost",
+    claimantName: "Болд Оюутан",
+    claimantEmail: "bold@num.edu.mn",
+    claimantPhone: "88112233",
+    answers: ["Boldiin AirPods"],
+    answersCorrect: [true],
+    status: "pending",
+  },
+  {
+    postTitle: "Samsung Galaxy утас",
+    postType: "lost",
+    claimantName: "Тэмүүлэн Бат",
+    claimantEmail: "temuulen@num.edu.mn",
+    claimantPhone: "88119900",
+    answers: ["баруун доод"],
+    answersCorrect: [true],
+    status: "pending",
+  },
+]
+
+const SEED_WITHDRAWALS = [
+  {
+    amount: 50000,
+    bankName: "Төрийн Банк",
+    accountNumber: "1234567890",
+    status: "pending",
+  },
+  {
+    amount: 30000,
+    bankName: "Төрийн Банк",
+    accountNumber: "0987654321",
+    status: "completed",
+  },
+  {
+    amount: 80000,
+    bankName: "XAC Bank",
+    accountNumber: "1111222233",
+    status: "completed",
+  },
+]
+
 async function run() {
   await connectDB()
   console.log("[seed] clearing existing data...")
@@ -103,6 +149,8 @@ async function run() {
     Faq.deleteMany({}),
     Transaction.deleteMany({}),
     SecurityLog.deleteMany({}),
+    Claim.deleteMany({}),
+    Withdrawal.deleteMany({}),
   ])
 
   console.log("[seed] inserting users...")
@@ -111,12 +159,17 @@ async function run() {
   const byEmail = Object.fromEntries(users.map((u) => [u.email, u]))
 
   console.log("[seed] inserting posts...")
+  const posts = []
   for (const p of SEED_POSTS) {
     const author = byEmail[p.authorEmail]
     if (!author) continue
     const { authorEmail, ...rest } = p
-    await Post.create({ ...rest, author: author._id })
+    const newPost = await Post.create({ ...rest, author: author._id })
+    posts.push(newPost)
   }
+  const byPostIndex = Object.fromEntries(
+    posts.map((p, i) => [i, p._id])
+  )
 
   console.log("[seed] inserting faqs...")
   await Faq.insertMany(SEED_FAQS)
@@ -126,6 +179,22 @@ async function run() {
 
   console.log("[seed] inserting security logs...")
   await SecurityLog.insertMany(SEED_SECURITY_LOGS)
+
+  console.log("[seed] inserting claims...")
+  const claimsToInsert = SEED_CLAIMS.map((c, i) => ({
+    ...c,
+    post: posts[i]?._id || posts[0]?._id,
+    claimant: byEmail[c.claimantEmail]?._id,
+  }))
+  await Claim.insertMany(claimsToInsert)
+
+  console.log("[seed] inserting withdrawals...")
+  const withdrawalsToInsert = SEED_WITHDRAWALS.map((w, i) => ({
+    ...w,
+    user: users[i + 1]?._id || users[1]?._id,
+    post: posts[i]?._id || posts[0]?._id,
+  }))
+  await Withdrawal.insertMany(withdrawalsToInsert)
 
   console.log("[seed] done.")
   await mongoose.disconnect()
