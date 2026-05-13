@@ -180,9 +180,14 @@ function PostsCarousel({
   const [swiper, setSwiper] = React.useState<SwiperType | null>(null);
   const [activeIndex, setActiveIndex] = React.useState(0);
 
+  React.useEffect(() => {
+    setSwiper(null);
+    setActiveIndex(0);
+  }, [resetKey]);
+
   const canNavigate = posts.length > 1;
-  const canPrev = Boolean(swiper && !swiper.isBeginning);
-  const canNext = Boolean(swiper && !swiper.isEnd);
+  const canPrev = swiper ? !swiper.isBeginning : false;
+  const canNext = swiper ? !swiper.isEnd : canNavigate;
 
   return (
     <div className="relative py-2">

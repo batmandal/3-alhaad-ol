@@ -23,13 +23,19 @@ export function LoginForm({
   const [phoneOrEmail, setPhoneOrEmail] = React.useState("")
   const [password, setPassword] = React.useState("")
   const [error, setError] = React.useState<string | null>(null)
+  const [submitting, setSubmitting] = React.useState(false)
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
-    const r = login(phoneOrEmail, password)
-    if (!r.ok) setError(r.message ?? "Алдаа гарлаа")
-    else onSuccess()
+    setSubmitting(true)
+    try {
+      const r = await login(phoneOrEmail, password)
+      if (!r.ok) setError(r.message ?? "Алдаа гарлаа")
+      else onSuccess()
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -79,8 +85,8 @@ export function LoginForm({
           {error}
         </p>
       )}
-      <Button type="submit" className={authPrimaryButtonClassName}>
-        Нэвтрэх
+      <Button type="submit" className={authPrimaryButtonClassName} disabled={submitting}>
+        {submitting ? "Нэвтэрч байна..." : "Нэвтрэх"}
       </Button>
       <button
         type="button"

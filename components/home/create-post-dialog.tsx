@@ -56,6 +56,7 @@ export function CreatePostDialog({
   const [step, setStep] = React.useState<Step>("form")
   const [pendingId, setPendingId] = React.useState<string | null>(null)
   const [error, setError] = React.useState<string | null>(null)
+  const [submitting, setSubmitting] = React.useState(false)
   const [type, setType] = React.useState<PostType>("lost")
   const [title, setTitle] = React.useState("")
   const [description, setDescription] = React.useState("")
@@ -88,7 +89,7 @@ export function CreatePostDialog({
     onOpenChange(next)
   }
 
-  function onSubmit(e: React.FormEvent) {
+  async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
     if (!currentUser) {
@@ -101,27 +102,45 @@ export function CreatePostDialog({
       return
     }
 
-    const created = addPost({
-      type,
-      title: title.trim(),
-      description: description.trim(),
-      category,
-      location,
-      date,
-      imageUrl: MOCK_IMAGE,
-      authorId: currentUser.id,
-      verificationQuestion: verificationQuestion.trim(),
-      correctAnswer: correctAnswer.trim(),
-      status: "pending_payment",
-    })
-    setPendingId(created.id)
-    setStep("payment")
+    setSubmitting(true)
+    try {
+      const created = await addPost({
+        type,
+        title: title.trim(),
+        description: description.trim(),
+        category,
+        location,
+        date,
+        imageUrl: MOCK_IMAGE,
+        authorId: currentUser.id,
+        verificationQuestion: verificationQuestion.trim(),
+        correctAnswer: correctAnswer.trim(),
+        status: "pending_payment",
+      })
+      setPendingId(created.id)
+      setStep("payment")
+    } catch (err) {
+      setError((err as Error).message || "Зар үүсгэхэд алдаа")
+    } finally {
+      setSubmitting(false)
+    }
   }
 
-  function verifyPayment() {
-    if (pendingId) updatePostStatus(pendingId, "published")
-    resetFields()
-    handleClose(false)
+  async function verifyPayment() {
+    if (!pendingId) {
+      handleClose(false)
+      return
+    }
+    setSubmitting(true)
+    try {
+      await updatePostStatus(pendingId, "published")
+      resetFields()
+      handleClose(false)
+    } catch (err) {
+      setError((err as Error).message || "Төлбөр шалгах алдаа")
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -218,11 +237,11 @@ export function CreatePostDialog({
               </div>
               {error && <p className="text-sm text-destructive">{error}</p>}
               <DialogFooter className={cn(postDialogFooterClassName, "mx-0! mb-0!")}>
-                <Button type="button" variant="outline" className={postCancelButtonClassName} onClick={() => handleClose(false)}>
+                <Button type="button" variant="outline" className={postCancelButtonClassName} onClick={() => handleClose(false)} disabled={submitting}>
                   Болих
                 </Button>
-                <Button type="submit" className={type === "lost" ? postSubmitButtonLost : postSubmitButtonFound}>
-                  Нийтлэх
+                <Button type="submit" className={type === "lost" ? postSubmitButtonLost : postSubmitButtonFound} disabled={submitting}>
+                  {submitting ? "Үүсгэж байна..." : "Нийтлэх"}
                 </Button>
               </DialogFooter>
             </form>
@@ -233,12 +252,13 @@ export function CreatePostDialog({
               <DialogTitle className={postDialogTitleClassName}>Төлбөр төлөх</DialogTitle>
             </DialogHeader>
             <p className="text-sm text-muted-foreground">QPay төлбөр хийсний дараа нийтлэгдэнэ.</p>
+            {error && <p className="text-sm text-destructive">{error}</p>}
             <DialogFooter className={cn(postDialogFooterClassName, "mx-0! mb-0!")}>
-              <Button variant="outline" className={postCancelButtonClassName} onClick={() => handleClose(false)}>
+              <Button variant="outline" className={postCancelButtonClassName} onClick={() => handleClose(false)} disabled={submitting}>
                 Хаах
               </Button>
-              <Button className={postSubmitButtonFound} onClick={verifyPayment}>
-                Төлбөр шалгах
+              <Button className={postSubmitButtonFound} onClick={verifyPayment} disabled={submitting}>
+                {submitting ? "Шалгаж байна..." : "Төлбөр шалгах"}
               </Button>
             </DialogFooter>
           </>

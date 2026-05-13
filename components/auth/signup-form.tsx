@@ -27,20 +27,26 @@ export function SignupForm({
   const [facebook, setFacebook] = React.useState("")
   const [name, setName] = React.useState("")
   const [error, setError] = React.useState<string | null>(null)
+  const [submitting, setSubmitting] = React.useState(false)
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
-    const r = signup({
-      sisiId,
-      phone,
-      email,
-      password,
-      facebook: facebook || undefined,
-      name,
-    })
-    if (!r.ok) setError(r.message ?? "Алдаа гарлаа")
-    else onSuccess()
+    setSubmitting(true)
+    try {
+      const r = await signup({
+        sisiId,
+        phone,
+        email,
+        password,
+        facebook: facebook || undefined,
+        name,
+      })
+      if (!r.ok) setError(r.message ?? "Алдаа гарлаа")
+      else onSuccess()
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -128,8 +134,8 @@ export function SignupForm({
           {error}
         </p>
       )}
-      <Button type="submit" className={authPrimaryButtonClassName}>
-        Бүртгүүлэх
+      <Button type="submit" className={authPrimaryButtonClassName} disabled={submitting}>
+        {submitting ? "Бүртгэж байна..." : "Бүртгүүлэх"}
       </Button>
       <button
         type="button"

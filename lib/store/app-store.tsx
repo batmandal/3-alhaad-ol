@@ -1,7 +1,8 @@
 "use client"
 
 import * as React from "react"
-import { INITIAL_POSTS, INITIAL_USERS, INITIAL_WITHDRAWALS } from "@/lib/mock-data"
+import { INITIAL_USERS, INITIAL_WITHDRAWALS } from "@/lib/mock-data"
+import * as api from "@/lib/api"
 import type {
   Claim,
   ClaimStatus,
@@ -13,7 +14,7 @@ import type {
   WithdrawalRequest,
 } from "@/lib/types"
 
-const STORAGE_KEY = "lostfound.appstate.v1"
+const STORAGE_KEY = "lostfound.appstate.v2"
 
 function normalizeAnswer(s: string) {
   return s.trim().toLowerCase().replace(/\s+/g, " ")
@@ -30,7 +31,12 @@ interface AppState {
 }
 
 interface AppContextValue extends AppState {
-  login: (phoneOrEmail: string, password: string) => { ok: boolean; message?: string }
+  postsLoading: boolean
+  refreshPosts: () => Promise<void>
+  login: (
+    phoneOrEmail: string,
+    password: string
+  ) => Promise<{ ok: boolean; message?: string }>
   signup: (payload: {
     sisiId: string
     phone: string
@@ -38,13 +44,14 @@ interface AppContextValue extends AppState {
     password: string
     facebook?: string
     name: string
-  }) => { ok: boolean; message?: string }
+  }) => Promise<{ ok: boolean; message?: string }>
   logout: () => void
-  addPost: (post: Omit<Post, "id" | "status"> & { status?: PostStatus }) => Post
-  updatePostStatus: (id: string, status: PostStatus) => void
+  addPost: (
+    post: Omit<Post, "id" | "status"> & { status?: PostStatus }
+  ) => Promise<Post>
+  updatePostStatus: (id: string, status: PostStatus) => Promise<void>
   verifyFoundAnswer: (postId: string, answer: string) => { ok: boolean; message?: string }
   verifyLostAnswer: (postId: string, answer: string) => { ok: boolean; message?: string }
-  verifiedPostIds: Record<string, string[]>
   submitClaim: (postId: string, answers: string[]) => { ok: boolean; message?: string; claimId?: string }
   approveClaim: (claimId: string) => void
   rejectClaim: (claimId: string) => void
@@ -57,7 +64,12 @@ interface AppContextValue extends AppState {
     accountNumber: string
   }) => void
   completeWithdrawal: (id: string) => void
-  updateCurrentUserProfile: (payload: { name: string; phone: string; email: string; sisiId: string }) => { ok: boolean; message?: string }
+  updateCurrentUserProfile: (payload: {
+    name: string
+    phone: string
+    email: string
+    sisiId: string
+  }) => { ok: boolean; message?: string }
   getUserById: (id: string) => User | undefined
 }
 
@@ -65,7 +77,8 @@ const AppContext = React.createContext<AppContextValue | null>(null)
 
 export function AppStoreProvider({ children }: { children: React.ReactNode }) {
   const [users, setUsers] = React.useState<User[]>(INITIAL_USERS)
-  const [posts, setPosts] = React.useState<Post[]>(INITIAL_POSTS)
+  const [posts, setPosts] = React.useState<Post[]>([])
+  const [postsLoading, setPostsLoading] = React.useState(true)
   const [claims, setClaims] = React.useState<Claim[]>([])
   const [withdrawals, setWithdrawals] = React.useState<WithdrawalRequest[]>(INITIAL_WITHDRAWALS)
   const [currentUser, setCurrentUser] = React.useState<User | null>(null)
@@ -73,61 +86,69 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
   const [verifiedPostIds, setVerifiedPostIds] = React.useState<Record<string, string[]>>({})
   const [isHydrated, setIsHydrated] = React.useState(false)
 
-  React.useEffect(() => {
-    if (typeof window === "undefined") return
-    try {
-      const raw = window.localStorage.getItem(STORAGE_KEY)
-      if (!raw) {
-        setIsHydrated(true)
-        return
-      }
-      const parsed = JSON.parse(raw) as Partial<AppState>
-      if (parsed.users) setUsers(parsed.users)
-      if (parsed.posts) {
-        const savedIds = new Set(parsed.posts.map((p) => p.id))
-        const newMockPosts = INITIAL_POSTS.filter((p) => !savedIds.has(p.id))
-        setPosts([...parsed.posts, ...newMockPosts])
-      }
-      if (parsed.claims) setClaims(parsed.claims)
-      if (parsed.withdrawals) setWithdrawals(parsed.withdrawals)
-      if (parsed.currentUser !== undefined) setCurrentUser(parsed.currentUser ?? null)
-      if (parsed.rewardEligibilities) setRewardEligibilities(parsed.rewardEligibilities)
-    } catch {
-      // ignore parse errors
-    } finally {
-      setIsHydrated(true)
+  const refreshPosts = React.useCallback(async () => {
+    setPostsLoading(true)
+    const res = await api.apiListPosts()
+    if (res.ok && res.data) {
+      setPosts(res.data.data || [])
     }
+    setPostsLoading(false)
   }, [])
 
+  // Initial mount: hydrate localStorage non-API state, fetch posts, restore session
+  React.useEffect(() => {
+    if (typeof window === "undefined") return
+
+    try {
+      const raw = window.localStorage.getItem(STORAGE_KEY)
+      if (raw) {
+        const parsed = JSON.parse(raw) as Partial<
+          Pick<AppState, "claims" | "withdrawals" | "rewardEligibilities" | "verifiedPostIds">
+        >
+        if (parsed.claims) setClaims(parsed.claims)
+        if (parsed.withdrawals) setWithdrawals(parsed.withdrawals)
+        if (parsed.rewardEligibilities) setRewardEligibilities(parsed.rewardEligibilities)
+        if (parsed.verifiedPostIds) setVerifiedPostIds(parsed.verifiedPostIds)
+      }
+    } catch {
+      // ignore
+    }
+
+    refreshPosts()
+
+    const token = api.getToken()
+    if (token) {
+      api.apiMe().then((res) => {
+        if (res.ok && res.data?.user) {
+          setCurrentUser(res.data.user)
+        } else {
+          api.clearToken()
+        }
+      })
+    }
+
+    setIsHydrated(true)
+  }, [refreshPosts])
+
+  // Persist non-API state
   React.useEffect(() => {
     if (typeof window === "undefined" || !isHydrated) return
-    const snapshot: AppState = {
-      users,
-      posts,
-      claims,
-      withdrawals,
-      currentUser,
-      rewardEligibilities,
-      verifiedPostIds,
-    }
+    const snapshot = { claims, withdrawals, rewardEligibilities, verifiedPostIds }
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot))
-  }, [users, posts, claims, withdrawals, currentUser, rewardEligibilities, isHydrated])
+  }, [claims, withdrawals, rewardEligibilities, verifiedPostIds, isHydrated])
 
-  const login = React.useCallback(
-    (phoneOrEmail: string, password: string) => {
-      const q = phoneOrEmail.trim().toLowerCase()
-      const u = users.find((x) => x.phone === phoneOrEmail.trim() || x.email.toLowerCase() === q)
-      if (!u || (u.password && u.password !== password)) {
-        return { ok: false, message: "Утас эсвэл имэйл, нууц үг буруу байна." }
-      }
-      setCurrentUser(u)
-      return { ok: true }
-    },
-    [users]
-  )
+  const login = React.useCallback(async (phoneOrEmail: string, password: string) => {
+    const res = await api.apiLogin(phoneOrEmail, password)
+    if (!res.ok || !res.data) {
+      return { ok: false, message: res.message || "Нэвтрэх амжилтгүй" }
+    }
+    api.setToken(res.data.token)
+    setCurrentUser(res.data.user)
+    return { ok: true }
+  }, [])
 
   const signup = React.useCallback(
-    (payload: {
+    async (payload: {
       sisiId: string
       phone: string
       email: string
@@ -135,38 +156,48 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
       facebook?: string
       name: string
     }) => {
-      if (users.some((u) => u.sisiId === payload.sisiId.trim())) {
-        return { ok: false, message: "Энэ SISI ID аль хэдийн бүртгэлтэй." }
+      const res = await api.apiSignup(payload)
+      if (!res.ok || !res.data) {
+        return { ok: false, message: res.message || "Бүртгэл амжилтгүй" }
       }
-      if (users.some((u) => u.phone === payload.phone.trim())) {
-        return { ok: false, message: "Энэ утасны дугаар аль хэдийн бүртгэлтэй." }
-      }
-      const nu: User = {
-        id: `u-${Date.now()}`,
-        sisiId: payload.sisiId.trim(),
-        phone: payload.phone.trim(),
-        email: payload.email.trim(),
-        facebook: payload.facebook?.trim(),
-        name: payload.name.trim(),
-        password: payload.password,
-      }
-      setUsers((prev) => [...prev, nu])
-      setCurrentUser(nu)
+      api.setToken(res.data.token)
+      setCurrentUser(res.data.user)
+      setUsers((prev) =>
+        prev.some((u) => u.id === res.data!.user.id) ? prev : [...prev, res.data!.user]
+      )
       return { ok: true }
     },
-    [users]
+    []
   )
 
-  const logout = React.useCallback(() => setCurrentUser(null), [])
-
-  const addPost = React.useCallback((post: Omit<Post, "id" | "status"> & { status?: PostStatus }) => {
-    const p: Post = { ...post, id: `p-${Date.now()}`, status: post.status ?? "published" }
-    setPosts((prev) => [p, ...prev])
-    return p
+  const logout = React.useCallback(() => {
+    api.clearToken()
+    setCurrentUser(null)
   }, [])
 
-  const updatePostStatus = React.useCallback((id: string, status: PostStatus) => {
-    setPosts((prev) => prev.map((p) => (p.id === id ? { ...p, status } : p)))
+  const addPost = React.useCallback(
+    async (post: Omit<Post, "id" | "status"> & { status?: PostStatus }) => {
+      const res = await api.apiCreatePost({
+        ...post,
+        status: post.status ?? "pending_payment",
+      })
+      if (!res.ok || !res.data) {
+        throw new Error(res.message || "Зар үүсгэхэд алдаа гарлаа")
+      }
+      const created = res.data.data
+      setPosts((prev) => [created, ...prev.filter((p) => p.id !== created.id)])
+      return created
+    },
+    []
+  )
+
+  const updatePostStatus = React.useCallback(async (id: string, status: PostStatus) => {
+    const res = await api.apiUpdatePostStatus(id, status)
+    if (!res.ok || !res.data) {
+      throw new Error(res.message || "Төлөв шинэчлэхэд алдаа гарлаа")
+    }
+    const updated = res.data.data
+    setPosts((prev) => prev.map((p) => (p.id === id ? updated : p)))
   }, [])
 
   const verifyFoundAnswer = React.useCallback(
@@ -372,10 +403,13 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
     () => ({
       users,
       posts,
+      postsLoading,
       claims,
       withdrawals,
       currentUser,
       rewardEligibilities,
+      verifiedPostIds,
+      refreshPosts,
       login,
       signup,
       logout,
@@ -383,7 +417,6 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
       updatePostStatus,
       verifyFoundAnswer,
       verifyLostAnswer,
-      verifiedPostIds,
       submitClaim,
       approveClaim,
       rejectClaim,
@@ -397,10 +430,13 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
     [
       users,
       posts,
+      postsLoading,
       claims,
       withdrawals,
       currentUser,
       rewardEligibilities,
+      verifiedPostIds,
+      refreshPosts,
       login,
       signup,
       logout,
@@ -408,7 +444,6 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
       updatePostStatus,
       verifyFoundAnswer,
       verifyLostAnswer,
-      verifiedPostIds,
       submitClaim,
       approveClaim,
       rejectClaim,
