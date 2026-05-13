@@ -9,10 +9,24 @@ const nextConfig: NextConfig = {
     root: projectRoot,
   },
   images: {
-    remotePatterns: [
-      { protocol: "https", hostname: "images.unsplash.com", pathname: "/**" },
-    ],
-  },
+      // Гадны домэйнээс зураг авах зөвшөөрөл
+      remotePatterns: [
+        {
+          protocol: 'https',
+          hostname: 'images.unsplash.com',
+          port: '',
+          pathname: '/**',
+        },
+        {
+          protocol: 'http', 
+          hostname: 'localhost',
+          port: '8080',
+          pathname: '/**',
+        },
+      ],
+    },
+    
+  reactStrictMode: true,
 };
 
 export default nextConfig;

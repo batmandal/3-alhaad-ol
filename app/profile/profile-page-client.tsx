@@ -18,14 +18,39 @@ import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
+function getStatusLabel(status: string) {
+  if (status === "pending_payment") return "Төлбөр хүлээгдэж байна"
+  if (status === "published") return "Нийтлэгдсэн"
+  if (status === "resolved") return "Олдсон / эзэнд нь өгсөн"
+  if (status === "rejected") return "Татгалзсан"
+  if (status === "draft") return "Ноорог"
+  return status
+}
+
+function getResolveButtonLabel(type: string) {
+  if (type === "lost") return "Олдсон болгох"
+  if (type === "found") return "Эзэнд өгсөн"
+  return "Дууссан болгох"
+}
+
 export function ProfilePageClient() {
+  const store = useAppStore()
+
   const {
     currentUser,
     posts,
     rewardEligibilities,
     submitWithdrawal,
     updateCurrentUserProfile,
-  } = useAppStore()
+  } = store
+
+  const updatePostStatus = (store as any).updatePostStatus as
+    | ((postId: string, status: string) => void)
+    | undefined
+
+  const deletePost = (store as any).deletePost as
+    | ((postId: string) => void)
+    | undefined
 
   const [withdrawPostId, setWithdrawPostId] = React.useState<string | null>(null)
   const [withdrawAmount, setWithdrawAmount] = React.useState(0)
@@ -39,26 +64,22 @@ export function ProfilePageClient() {
   const [profileError, setProfileError] = React.useState<string | null>(null)
   const [profileOk, setProfileOk] = React.useState<string | null>(null)
 
-  if (!currentUser) {
-    return (
-      <div className="mx-auto max-w-lg px-4 py-20 text-center">
-        <p className="text-muted-foreground">Профайл харахын тулд нэвтэрнэ үү.</p>
-        <Link href="/" className={cn(buttonVariants(), "mt-4 inline-flex")}>
-          Нүүр рүү
-        </Link>
-      </div>
-    )
-  }
-
-  const mine = posts.filter((p) => p.authorId === currentUser.id)
-  const eligible = rewardEligibilities[currentUser.id] ?? []
-
   React.useEffect(() => {
+    if (!currentUser) return
+
     setName(currentUser.name)
     setPhone(currentUser.phone)
     setEmail(currentUser.email)
     setSisiId(currentUser.sisiId)
   }, [currentUser])
+
+  const mine = currentUser
+    ? posts.filter((p) => p.authorId === currentUser.id)
+    : []
+
+  const eligible = currentUser
+    ? rewardEligibilities[currentUser.id] ?? []
+    : []
 
   function openWithdraw(postId: string, amount: number) {
     setWithdrawPostId(postId)
@@ -69,31 +90,39 @@ export function ProfilePageClient() {
 
   function handleWithdrawSubmit(e: React.FormEvent) {
     e.preventDefault()
+
     if (!withdrawPostId) return
+
     submitWithdrawal({
       postId: withdrawPostId,
       amount: withdrawAmount,
       bankName,
       accountNumber,
     })
+
     setWithdrawPostId(null)
   }
 
   function handleProfileSave(e: React.FormEvent) {
     e.preventDefault()
+
     setProfileError(null)
     setProfileOk(null)
+
     const r = updateCurrentUserProfile({ name, phone, email, sisiId })
+
     if (!r.ok) {
       setProfileError(r.message ?? "Профайл шинэчлэхэд алдаа гарлаа.")
       return
     }
+
     setIsEditing(false)
     setProfileOk("Профайл амжилттай шинэчлэгдлээ.")
   }
 
   function handleProfileCancel() {
     if (!currentUser) return
+
     setName(currentUser.name)
     setPhone(currentUser.phone)
     setEmail(currentUser.email)
@@ -101,6 +130,48 @@ export function ProfilePageClient() {
     setProfileError(null)
     setProfileOk(null)
     setIsEditing(false)
+  }
+
+  function handleResolvePost(postId: string) {
+    if (!updatePostStatus) {
+      alert("updatePostStatus function app-store.tsx дотор байхгүй байна.")
+      return
+    }
+
+    updatePostStatus(postId, "resolved")
+  }
+
+  function handleRepublishPost(postId: string) {
+    if (!updatePostStatus) {
+      alert("updatePostStatus function app-store.tsx дотор байхгүй байна.")
+      return
+    }
+
+    updatePostStatus(postId, "published")
+  }
+
+  function handleDeletePost(postId: string) {
+    const ok = window.confirm("Энэ зарыг устгах уу?")
+
+    if (!ok) return
+
+    if (!deletePost) {
+      alert("deletePost function app-store.tsx дотор байхгүй байна.")
+      return
+    }
+
+    deletePost(postId)
+  }
+
+  if (!currentUser) {
+    return (
+      <div className="mx-auto max-w-lg px-4 py-20 text-center">
+        <p className="text-muted-foreground">Профайл харахын тулд нэвтэрнэ үү.</p>
+        <Link href="/" className={cn(buttonVariants(), "mt-4 inline-flex")}>
+          Нүүр рүү
+        </Link>
+      </div>
+    )
   }
 
   return (
@@ -120,12 +191,14 @@ export function ProfilePageClient() {
       <Card className="mt-6 border-border/60">
         <CardHeader className="flex flex-row items-center justify-between gap-3">
           <CardTitle className="text-lg">Хувийн мэдээлэл</CardTitle>
+
           {!isEditing ? (
             <Button size="sm" variant="outline" onClick={() => setIsEditing(true)}>
               Засах
             </Button>
           ) : null}
         </CardHeader>
+
         <CardContent>
           <form className="grid gap-4" onSubmit={handleProfileSave}>
             <div className="grid gap-2">
@@ -138,6 +211,7 @@ export function ProfilePageClient() {
                 required
               />
             </div>
+
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="grid gap-2">
                 <Label htmlFor="p-phone">Утас</Label>
@@ -149,6 +223,7 @@ export function ProfilePageClient() {
                   required
                 />
               </div>
+
               <div className="grid gap-2">
                 <Label htmlFor="p-sisi">SISI ID</Label>
                 <Input
@@ -160,6 +235,7 @@ export function ProfilePageClient() {
                 />
               </div>
             </div>
+
             <div className="grid gap-2">
               <Label htmlFor="p-email">Имэйл</Label>
               <Input
@@ -177,6 +253,7 @@ export function ProfilePageClient() {
                 {profileError}
               </p>
             )}
+
             {profileOk && (
               <p className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
                 {profileOk}
@@ -200,6 +277,7 @@ export function ProfilePageClient() {
           <CardHeader>
             <CardTitle className="text-lg">Шагнал авах боломж</CardTitle>
           </CardHeader>
+
           <CardContent className="space-y-3">
             {eligible.map((e) => (
               <div
@@ -209,6 +287,7 @@ export function ProfilePageClient() {
                 <span className="text-sm">
                   Зар #{e.postId} — {e.amount.toLocaleString()} ₮
                 </span>
+
                 <Button size="sm" onClick={() => openWithdraw(e.postId, e.amount)}>
                   Шагнал авах
                 </Button>
@@ -219,35 +298,78 @@ export function ProfilePageClient() {
       )}
 
       <h2 className="mt-10 text-lg font-semibold">Миний зарууд</h2>
+
       <ul className="mt-4 space-y-4">
         {mine.map((p) => (
-          <li key={p.id}>
-            <Link
-              href={`/posts/${p.id}`}
-              className="flex gap-4 rounded-xl border border-border/60 bg-card p-3 transition hover:bg-muted/40"
-            >
-              <div className="relative size-20 shrink-0 overflow-hidden rounded-lg">
+          <li
+            key={p.id}
+            className="rounded-xl border border-border/60 bg-card p-3 transition hover:bg-muted/40"
+          >
+            <div className="flex gap-4">
+              <Link
+                href={`/posts/${p.id}`}
+                className="relative size-20 shrink-0 overflow-hidden rounded-lg"
+              >
                 <Image
                   src={p.imageUrl}
-                  alt=""
+                  alt={p.title}
                   fill
                   className="object-cover"
                   sizes="80px"
                 />
-              </div>
+              </Link>
+
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge variant={p.type === "lost" ? "destructive" : "default"}>
                     {p.type === "lost" ? "Хаясан" : "Олсон"}
                   </Badge>
-                  {p.status === "pending_payment" && (
-                    <Badge variant="outline">Төлбөр хүлээгдэж байна</Badge>
-                  )}
+
+                  <Badge variant="outline">{getStatusLabel(p.status)}</Badge>
                 </div>
-                <p className="mt-1 font-medium line-clamp-1">{p.title}</p>
+
+                <Link href={`/posts/${p.id}`}>
+                  <p className="mt-1 line-clamp-1 font-medium hover:underline">
+                    {p.title}
+                  </p>
+                </Link>
+
                 <p className="text-xs text-muted-foreground">{p.date}</p>
+
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {p.status === "published" && (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleResolvePost(p.id)}
+                    >
+                      {getResolveButtonLabel(p.type)}
+                    </Button>
+                  )}
+
+                  {p.status === "resolved" && (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleRepublishPost(p.id)}
+                    >
+                      Дахин нийтлэх
+                    </Button>
+                  )}
+
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => handleDeletePost(p.id)}
+                  >
+                    Устгах
+                  </Button>
+                </div>
               </div>
-            </Link>
+            </div>
           </li>
         ))}
       </ul>
@@ -267,9 +389,11 @@ export function ProfilePageClient() {
             <DialogHeader>
               <DialogTitle>Шагнал авах хүсэлт</DialogTitle>
             </DialogHeader>
+
             <p className="text-sm text-muted-foreground">
               Дүн: {withdrawAmount.toLocaleString()} ₮
             </p>
+
             <div className="grid gap-3 py-4">
               <div className="grid gap-2">
                 <Label htmlFor="bn">Банкны нэр</Label>
@@ -281,6 +405,7 @@ export function ProfilePageClient() {
                   required
                 />
               </div>
+
               <div className="grid gap-2">
                 <Label htmlFor="an">Дансны дугаар</Label>
                 <Input
@@ -291,10 +416,16 @@ export function ProfilePageClient() {
                 />
               </div>
             </div>
+
             <DialogFooter className="border-0 bg-transparent p-0 sm:justify-end">
-              <Button type="button" variant="outline" onClick={() => setWithdrawPostId(null)}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setWithdrawPostId(null)}
+              >
                 Болих
               </Button>
+
               <Button type="submit">Илгээх</Button>
             </DialogFooter>
           </form>

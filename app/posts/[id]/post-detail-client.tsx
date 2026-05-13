@@ -44,23 +44,58 @@ export function PostDetailClient({ id }: { id: string }) {
       return
     }
 
-    if (post.type === "found") {
-      const r = verifyFoundAnswer(id, answer)
-      if (!r.ok) {
-        setMsg("Буруу хариулт байна. Дахин оролдоно уу.")
-        return
+    // Try backend verification first (if available)
+    const verifyWithBackend = async () => {
+      try {
+        const response = await fetch(`http://localhost:8080/api/posts/${id}/verify`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ answer }),
+        })
+        
+        if (response.ok) {
+          const result = await response.json()
+          if (result.ok) {
+            setVerified(true)
+            setMsg("Зөв хариулт! Постын эзэнтэй холбогдох мэдээлэл доор харагдаж байна.")
+            if (post.type === "found") {
+              verifyFoundAnswer(id, answer)
+            }
+            return true
+          }
+        }
+      } catch (error) {
+        console.warn("Backend verification failed, using local verification")
       }
-      setVerified(true)
-      setMsg("Зөв хариулт! Постын эзэнтэй холбогдох мэдээлэл доор харагдаж байна.")
+      return false
+    }
+
+    // Fallback to local verification
+    if (post.type === "found") {
+      verifyWithBackend().then((success) => {
+        if (!success) {
+          const r = verifyFoundAnswer(id, answer)
+          if (!r.ok) {
+            setMsg("Буруу хариулт байна. Дахин оролдоно уу.")
+            return
+          }
+          setVerified(true)
+          setMsg("Зөв хариулт! Постын эзэнтэй холбогдох мэдээлэл доор харагдаж байна.")
+        }
+      })
       return
     }
 
-    if (normalizeAnswer(answer) !== normalizeAnswer(post.correctAnswer)) {
-      setMsg("Буруу хариулт байна. Дахин оролдоно уу.")
-      return
-    }
-    setVerified(true)
-    setMsg("Зөв хариулт! Постын эзэнтэй холбогдох мэдээлэл доор харагдаж байна.")
+    verifyWithBackend().then((success) => {
+      if (!success) {
+        if (normalizeAnswer(answer) !== normalizeAnswer(post.correctAnswer)) {
+          setMsg("Буруу хариулт байна. Дахин оролдоно уу.")
+          return
+        }
+        setVerified(true)
+        setMsg("Зөв хариулт! Постын эзэнтэй холбогдох мэдээлэл доор харагдаж байна.")
+      }
+    })
   }
 
   const showContact = verified && post.correctAnswer && author
