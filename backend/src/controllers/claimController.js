@@ -14,35 +14,57 @@ function shapeClaim(c) {
 }
 
 exports.submit = async (req, res, next) => {
-  try {
-    const { postId, answers } = req.body
-    if (!postId || !Array.isArray(answers)) {
-      return res.status(400).json({ message: "postId and answers required" })
+try {
+    // req.body-оос post эсвэл postId-ийн аль нэгийг нь авна
+    const postId = req.body.postId || req.body.post;
+    // answers эсвэл answer-ийн аль нэгийг нь авна
+    const answers = req.body.answers || req.body.answer;
+    
+    // Array мөн эсэхийг илүү сайн шалгах
+    const finalAnswers = Array.isArray(answers) ? answers : [answers];
+
+    if (!postId || !answers) {
+      return res.status(400).json({ 
+        message: "postId болон answers (array) шаардлагатай" 
+      });
     }
+
+    // Post-ыг асуултуудтай нь цуг татах
     const post = await Post.findById(postId).select("+correctAnswer +verificationQuestions")
-    if (!post) return res.status(404).json({ message: "Post not found" })
+    if (!post) return res.status(404).json({ message: "Зар олдсонгүй" })
+
+    // Өөрийн заранд хүсэлт гаргахыг хориглох
     if (post.author.toString() === req.user._id.toString()) {
-      return res.status(400).json({ message: "Cannot claim your own post" })
+      return res.status(400).json({ message: "Өөрийн оруулсан заранд хүсэлт илгээх боломжгүй" })
     }
+
+    // Өмнө нь илгээсэн хүсэлт байгаа эсэхийг шалгах
     const existing = await Claim.findOne({
       post: post._id,
       claimant: req.user._id,
       status: { $in: ["pending", "approved"] },
     })
-    if (existing) return res.status(409).json({ message: "Claim already exists" })
+    if (existing) return res.status(409).json({ message: "Энэ заранд хэдийн хүсэлт илгээсэн байна" })
 
-    const questions =
-      post.verificationQuestions?.length
-        ? post.verificationQuestions
-        : post.verificationQuestion && post.correctAnswer
-          ? [{ question: post.verificationQuestion, answer: post.correctAnswer }]
-          : []
-    if (!questions.length) {
-      return res.status(400).json({ message: "Post has no verification questions" })
+    // Асуултуудыг нэгтгэх логик
+    let questions = []
+    if (post.verificationQuestions && post.verificationQuestions.length > 0) {
+      questions = post.verificationQuestions
+    } else if (post.verificationQuestion && post.correctAnswer) {
+      questions = [{ question: post.verificationQuestion, answer: post.correctAnswer }]
     }
-    const answersCorrect = questions.map(
-      (q, i) => normalizeAnswer(answers[i] ?? "") === normalizeAnswer(q.answer)
-    )
+
+    if (questions.length === 0) {
+      return res.status(400).json({ message: "Энэ заранд баталгаажуулах асуулт байхгүй байна" })
+    }
+
+    // Хариултуудыг шалгах
+    const answersCorrect = questions.map((q, i) => {
+      const userAnswer = normalizeAnswer(answers[i] || "")
+      const correctAnswer = normalizeAnswer(q.answer || "")
+      return userAnswer === correctAnswer
+    })
+
     const claim = await Claim.create({
       post: post._id,
       postTitle: post.title,
@@ -55,6 +77,7 @@ exports.submit = async (req, res, next) => {
       answersCorrect,
       status: "pending",
     })
+
     res.status(201).json({ data: shapeClaim(claim) })
   } catch (err) {
     next(err)
