@@ -43,6 +43,7 @@ interface AppContextValue extends AppState {
   logout: () => void
   addPost: (post: Omit<Post, "id" | "status"> & { status?: PostStatus }) => Post
   updatePostStatus: (id: string, status: PostStatus) => void
+  deletePost: (id: string) => void
   verifyFoundAnswer: (postId: string, answer: string) => { ok: boolean; message?: string }
   verifyLostAnswer: (postId: string, answer: string) => { ok: boolean; message?: string }
   verifiedPostIds: Record<string, string[]>
@@ -58,7 +59,12 @@ interface AppContextValue extends AppState {
     accountNumber: string
   }) => void
   completeWithdrawal: (id: string) => void
-  updateCurrentUserProfile: (payload: { name: string; phone: string; email: string; sisiId: string }) => { ok: boolean; message?: string }
+  updateCurrentUserProfile: (payload: {
+    name: string
+    phone: string
+    email: string
+    sisiId: string
+  }) => { ok: boolean; message?: string }
   getUserById: (id: string) => User | undefined
 }
 
@@ -68,68 +74,79 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
   const [users, setUsers] = React.useState<User[]>(INITIAL_USERS)
   const [posts, setPosts] = React.useState<Post[]>(INITIAL_POSTS)
   const [claims, setClaims] = React.useState<Claim[]>([])
-  const [withdrawals, setWithdrawals] = React.useState<WithdrawalRequest[]>(INITIAL_WITHDRAWALS)
+  const [withdrawals, setWithdrawals] =
+    React.useState<WithdrawalRequest[]>(INITIAL_WITHDRAWALS)
   const [currentUser, setCurrentUser] = React.useState<User | null>(null)
-  const [rewardEligibilities, setRewardEligibilities] = React.useState<Record<string, RewardEligibility[]>>({})
+  const [rewardEligibilities, setRewardEligibilities] = React.useState<
+    Record<string, RewardEligibility[]>
+  >({})
   const [verifiedPostIds, setVerifiedPostIds] = React.useState<Record<string, string[]>>({})
   const [isHydrated, setIsHydrated] = React.useState(false)
 
   React.useEffect(() => {
     if (typeof window === "undefined") return
-    
-    // Fetch posts from backend
-    const fetchBackendPosts = async () => {
+
+    async function fetchBackendPosts() {
       try {
         const response = await fetch(`${BACKEND_URL}/api/posts`)
         if (!response.ok) throw new Error("Failed to fetch posts")
-        
+
         const data = await response.json()
+
         if (data.data && Array.isArray(data.data)) {
-          // Transform backend posts to frontend format
-          const backendPosts = data.data.map((p: any) => ({
+          const backendPosts: Post[] = data.data.map((p: any) => ({
             id: p.id,
             type: p.type,
             title: p.title,
             description: p.description,
             category: p.category,
             location: p.location,
-            date: p.date || new Date().toISOString().split('T')[0],
+            date: p.date || new Date().toISOString().split("T")[0],
             imageUrl: p.imageUrl,
             authorId: p.authorId || p.author,
             status: p.status || "published",
             rewardAmount: p.rewardAmount,
             verificationQuestion: p.verificationQuestion,
             correctAnswer: p.correctAnswer,
+            verificationQuestions: p.verificationQuestions,
             finderRewardAmount: p.finderRewardAmount,
           }))
-          
-          // Merge backend posts with mock posts, avoiding duplicates
-          const backendIds = new Set(backendPosts.map((p: Post) => p.id))
-          const mockPostsToAdd = INITIAL_POSTS.filter((p) => !backendIds.has(p.id))
-          setPosts([...backendPosts, ...mockPostsToAdd])
+
+          setPosts((prev) => {
+            const existingIds = new Set(prev.map((p) => p.id))
+            const newBackendPosts = backendPosts.filter((p) => !existingIds.has(p.id))
+            return [...prev, ...newBackendPosts]
+          })
         }
       } catch (error) {
-        console.warn("Could not fetch from backend, using mock data:", error)
-        // Fallback to mock data if backend is unavailable
+        console.warn("Could not fetch from backend, using local/mock data:", error)
       }
     }
 
-    fetchBackendPosts()
-    
     try {
       const raw = window.localStorage.getItem(STORAGE_KEY)
-      if (!raw) {
-        setIsHydrated(true)
-        return
+
+      if (raw) {
+        const parsed = JSON.parse(raw) as Partial<AppState>
+
+        if (parsed.users) setUsers(parsed.users)
+        if (parsed.posts) setPosts(parsed.posts)
+        if (parsed.claims) setClaims(parsed.claims)
+        if (parsed.withdrawals) setWithdrawals(parsed.withdrawals)
+        if (parsed.currentUser !== undefined) {
+          setCurrentUser(parsed.currentUser ?? null)
+        }
+        if (parsed.rewardEligibilities) {
+          setRewardEligibilities(parsed.rewardEligibilities)
+        }
+        if (parsed.verifiedPostIds) {
+          setVerifiedPostIds(parsed.verifiedPostIds)
+        }
+      } else {
+        fetchBackendPosts()
       }
-      const parsed = JSON.parse(raw) as Partial<AppState>
-      if (parsed.users) setUsers(parsed.users)
-      if (parsed.claims) setClaims(parsed.claims)
-      if (parsed.withdrawals) setWithdrawals(parsed.withdrawals)
-      if (parsed.currentUser !== undefined) setCurrentUser(parsed.currentUser ?? null)
-      if (parsed.rewardEligibilities) setRewardEligibilities(parsed.rewardEligibilities)
     } catch {
-      // ignore parse errors
+      fetchBackendPosts()
     } finally {
       setIsHydrated(true)
     }
@@ -137,6 +154,7 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
 
   React.useEffect(() => {
     if (typeof window === "undefined" || !isHydrated) return
+
     const snapshot: AppState = {
       users,
       posts,
@@ -146,20 +164,34 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
       rewardEligibilities,
       verifiedPostIds,
     }
+
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot))
-  }, [users, posts, claims, withdrawals, currentUser, rewardEligibilities, isHydrated])
+  }, [
+    users,
+    posts,
+    claims,
+    withdrawals,
+    currentUser,
+    rewardEligibilities,
+    verifiedPostIds,
+    isHydrated,
+  ])
 
   const login = React.useCallback(
     (phoneOrEmail: string, password: string) => {
       const q = phoneOrEmail.trim().toLowerCase()
-      const u = users.find((x) => x.phone === phoneOrEmail.trim() || x.email.toLowerCase() === q)
+      const u = users.find(
+        (x) => x.phone === phoneOrEmail.trim() || x.email.toLowerCase() === q,
+      )
+
       if (!u || (u.password && u.password !== password)) {
         return { ok: false, message: "Утас эсвэл имэйл, нууц үг буруу байна." }
       }
+
       setCurrentUser(u)
       return { ok: true }
     },
-    [users]
+    [users],
   )
 
   const signup = React.useCallback(
@@ -174,9 +206,11 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
       if (users.some((u) => u.sisiId === payload.sisiId.trim())) {
         return { ok: false, message: "Энэ SISI ID аль хэдийн бүртгэлтэй." }
       }
+
       if (users.some((u) => u.phone === payload.phone.trim())) {
         return { ok: false, message: "Энэ утасны дугаар аль хэдийн бүртгэлтэй." }
       }
+
       const nu: User = {
         id: `u-${Date.now()}`,
         sisiId: payload.sisiId.trim(),
@@ -186,83 +220,162 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
         name: payload.name.trim(),
         password: payload.password,
       }
+
       setUsers((prev) => [...prev, nu])
       setCurrentUser(nu)
+
       return { ok: true }
     },
-    [users]
+    [users],
   )
 
   const logout = React.useCallback(() => setCurrentUser(null), [])
 
-  const addPost = React.useCallback((post: Omit<Post, "id" | "status"> & { status?: PostStatus }) => {
-    const p: Post = { ...post, id: `p-${Date.now()}`, status: post.status ?? "published" }
-    setPosts((prev) => [p, ...prev])
-    return p
-  }, [])
+  const addPost = React.useCallback(
+    (post: Omit<Post, "id" | "status"> & { status?: PostStatus }) => {
+      const p: Post = {
+        ...post,
+        id: `p-${Date.now()}`,
+        status: post.status ?? "published",
+      }
+
+      setPosts((prev) => [p, ...prev])
+      return p
+    },
+    [],
+  )
 
   const updatePostStatus = React.useCallback((id: string, status: PostStatus) => {
     setPosts((prev) => prev.map((p) => (p.id === id ? { ...p, status } : p)))
   }, [])
 
+  const deletePost = React.useCallback((id: string) => {
+    setPosts((prev) => prev.filter((p) => p.id !== id))
+    setClaims((prev) => prev.filter((c) => c.postId !== id))
+
+    setRewardEligibilities((prev) => {
+      const next: Record<string, RewardEligibility[]> = {}
+
+      for (const [userId, list] of Object.entries(prev)) {
+        next[userId] = list.filter((item) => item.postId !== id)
+      }
+
+      return next
+    })
+
+    setVerifiedPostIds((prev) => {
+      const next: Record<string, string[]> = {}
+
+      for (const [userId, list] of Object.entries(prev)) {
+        next[userId] = list.filter((postId) => postId !== id)
+      }
+
+      return next
+    })
+  }, [])
+
   const verifyFoundAnswer = React.useCallback(
     (postId: string, answer: string) => {
       const post = posts.find((p) => p.id === postId)
-      if (!post || post.type !== "found") return { ok: false, message: "Зар олдсонгүй." }
+
+      if (!post || post.type !== "found") {
+        return { ok: false, message: "Зар олдсонгүй." }
+      }
+
       const expected = post.correctAnswer
+
       if (!expected) {
         return { ok: false, message: "Баталгаажуулалт тохируулаагүй." }
       }
+
       if (normalizeAnswer(answer) !== normalizeAnswer(expected)) {
         return { ok: false, message: "Хариулт таарахгүй байна." }
       }
+
       if (currentUser && post.finderRewardAmount && post.finderRewardAmount > 0) {
         const rewardAmount = post.finderRewardAmount
+
         setRewardEligibilities((prev) => {
           const uid = currentUser.id
           const list = prev[uid] ?? []
+
           if (list.some((e) => e.postId === postId)) return prev
-          return { ...prev, [uid]: [...list, { postId, amount: rewardAmount }] }
+
+          return {
+            ...prev,
+            [uid]: [...list, { postId, amount: rewardAmount }],
+          }
         })
       }
+
       return { ok: true }
     },
-    [posts, currentUser]
+    [posts, currentUser],
   )
 
   const verifyLostAnswer = React.useCallback(
     (postId: string, answer: string) => {
       const post = posts.find((p) => p.id === postId)
-      if (!post || post.type !== "lost") return { ok: false, message: "Зар олдсонгүй." }
+
+      if (!post || post.type !== "lost") {
+        return { ok: false, message: "Зар олдсонгүй." }
+      }
+
       const expected = post.correctAnswer
-      if (!expected) return { ok: false, message: "Баталгаажуулалт тохируулаагүй." }
+
+      if (!expected) {
+        return { ok: false, message: "Баталгаажуулалт тохируулаагүй." }
+      }
+
       if (normalizeAnswer(answer) !== normalizeAnswer(expected)) {
         return { ok: false, message: "Хариулт таарахгүй байна." }
       }
+
       if (currentUser) {
         setVerifiedPostIds((prev) => {
           const uid = currentUser.id
           const list = prev[uid] ?? []
+
           if (list.includes(postId)) return prev
-          return { ...prev, [uid]: [...list, postId] }
+
+          return {
+            ...prev,
+            [uid]: [...list, postId],
+          }
         })
       }
+
       return { ok: true }
     },
-    [posts, currentUser]
+    [posts, currentUser],
   )
 
   const submitClaim = React.useCallback(
     (postId: string, answers: string[]) => {
-      if (!currentUser) return { ok: false, message: "Эхлээд нэвтэрнэ үү." }
+      if (!currentUser) {
+        return { ok: false, message: "Эхлээд нэвтэрнэ үү." }
+      }
+
       const post = posts.find((p) => p.id === postId)
-      if (!post) return { ok: false, message: "Зар олдсонгүй." }
-      if (post.authorId === currentUser.id) return { ok: false, message: "Өөрийн зарт хүсэлт илгээх боломжгүй." }
+
+      if (!post) {
+        return { ok: false, message: "Зар олдсонгүй." }
+      }
+
+      if (post.authorId === currentUser.id) {
+        return { ok: false, message: "Өөрийн зарт хүсэлт илгээх боломжгүй." }
+      }
 
       const existing = claims.find(
-        (c) => c.postId === postId && c.claimantId === currentUser.id && (c.status === "pending" || c.status === "approved")
+        (c) =>
+          c.postId === postId &&
+          c.claimantId === currentUser.id &&
+          (c.status === "pending" || c.status === "approved"),
       )
-      if (existing) return { ok: false, message: "Та аль хэдийн хүсэлт илгээсэн байна." }
+
+      if (existing) {
+        return { ok: false, message: "Та аль хэдийн хүсэлт илгээсэн байна." }
+      }
 
       const questions: VerificationQuestion[] = post.verificationQuestions?.length
         ? post.verificationQuestions
@@ -270,10 +383,12 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
           ? [{ question: post.verificationQuestion, answer: post.correctAnswer }]
           : []
 
-      if (!questions.length) return { ok: false, message: "Баталгаажуулах асуулт тохируулаагүй байна." }
+      if (!questions.length) {
+        return { ok: false, message: "Баталгаажуулах асуулт тохируулаагүй байна." }
+      }
 
       const answersCorrect = questions.map(
-        (q, i) => normalizeAnswer(answers[i] ?? "") === normalizeAnswer(q.answer)
+        (q, i) => normalizeAnswer(answers[i] ?? "") === normalizeAnswer(q.answer),
       )
 
       const claim: Claim = {
@@ -290,51 +405,82 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
         status: "pending",
         createdAt: new Date().toISOString(),
       }
+
       setClaims((prev) => [claim, ...prev])
+
       return { ok: true, claimId: claim.id }
     },
-    [currentUser, posts, claims]
+    [currentUser, posts, claims],
   )
 
   const approveClaim = React.useCallback((claimId: string) => {
     setClaims((prev) => {
       const approved = prev.find((x) => x.id === claimId)
+
       return prev.map((c) => {
-        if (c.id === claimId) return { ...c, status: "approved" as ClaimStatus }
+        if (c.id === claimId) {
+          return { ...c, status: "approved" as ClaimStatus }
+        }
+
         if (approved && c.postId === approved.postId && c.status === "pending") {
           return { ...c, status: "rejected" as ClaimStatus }
         }
+
         return c
       })
     })
 
     setClaims((prev) => {
       const claim = prev.find((c) => c.id === claimId)
+
       if (!claim) return prev
+
       setPosts((pp) => {
         const post = pp.find((p) => p.id === claim.postId)
+
         if (!post) return pp
-        const rewardAmt = post.type === "lost" ? post.rewardAmount : post.finderRewardAmount
+
+        const rewardAmt =
+          post.type === "lost" ? post.rewardAmount : post.finderRewardAmount
+
         if (rewardAmt && rewardAmt > 0) {
           setRewardEligibilities((re) => {
             const uid = claim.claimantId
             const list = re[uid] ?? []
+
             if (list.some((e) => e.postId === claim.postId)) return re
-            return { ...re, [uid]: [...list, { postId: claim.postId, amount: rewardAmt }] }
+
+            return {
+              ...re,
+              [uid]: [...list, { postId: claim.postId, amount: rewardAmt }],
+            }
           })
         }
+
         return pp
       })
+
       return prev
     })
   }, [])
 
   const rejectClaim = React.useCallback((claimId: string) => {
-    setClaims((prev) => prev.map((c) => (c.id === claimId ? { ...c, status: "rejected" as ClaimStatus } : c)))
+    setClaims((prev) =>
+      prev.map((c) =>
+        c.id === claimId ? { ...c, status: "rejected" as ClaimStatus } : c,
+      ),
+    )
   }, [])
 
-  const getClaimsForPost = React.useCallback((postId: string) => claims.filter((c) => c.postId === postId), [claims])
-  const getMyClaims = React.useCallback(() => (currentUser ? claims.filter((c) => c.claimantId === currentUser.id) : []), [claims, currentUser])
+  const getClaimsForPost = React.useCallback(
+    (postId: string) => claims.filter((c) => c.postId === postId),
+    [claims],
+  )
+
+  const getMyClaims = React.useCallback(
+    () => (currentUser ? claims.filter((c) => c.claimantId === currentUser.id) : []),
+    [claims, currentUser],
+  )
 
   const submitWithdrawal = React.useCallback(
     (payload: {
@@ -344,7 +490,9 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
       accountNumber: string
     }) => {
       if (!currentUser) return
+
       const id = `w-${Date.now()}`
+
       const row: WithdrawalRequest = {
         id,
         userId: currentUser.id,
@@ -355,27 +503,32 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
         status: "pending",
         createdAt: new Date().toISOString().slice(0, 10),
       }
+
       setWithdrawals((prev) => [...prev, row])
+
       setRewardEligibilities((prev) => {
         const list = prev[currentUser.id] ?? []
+
         return {
           ...prev,
           [currentUser.id]: list.filter((e) => e.postId !== payload.postId),
         }
       })
     },
-    [currentUser]
+    [currentUser],
   )
 
   const completeWithdrawal = React.useCallback((id: string) => {
     setWithdrawals((prev) =>
-      prev.map((w) => (w.id === id ? { ...w, status: "completed" as const } : w))
+      prev.map((w) => (w.id === id ? { ...w, status: "completed" as const } : w)),
     )
   }, [])
 
   const updateCurrentUserProfile = React.useCallback(
     (payload: { name: string; phone: string; email: string; sisiId: string }) => {
-      if (!currentUser) return { ok: false, message: "Нэвтрээгүй байна." }
+      if (!currentUser) {
+        return { ok: false, message: "Нэвтрээгүй байна." }
+      }
 
       const next = {
         name: payload.name.trim(),
@@ -383,26 +536,42 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
         email: payload.email.trim().toLowerCase(),
         sisiId: payload.sisiId.trim(),
       }
+
       if (!next.name || !next.phone || !next.email || !next.sisiId) {
         return { ok: false, message: "Бүх талбарыг бөглөнө үү." }
       }
+
       if (users.some((u) => u.id !== currentUser.id && u.phone === next.phone)) {
         return { ok: false, message: "Энэ утасны дугаар бүртгэлтэй байна." }
       }
-      if (users.some((u) => u.id !== currentUser.id && u.email.toLowerCase() === next.email)) {
+
+      if (
+        users.some(
+          (u) => u.id !== currentUser.id && u.email.toLowerCase() === next.email,
+        )
+      ) {
         return { ok: false, message: "Энэ имэйл бүртгэлтэй байна." }
       }
+
       if (users.some((u) => u.id !== currentUser.id && u.sisiId === next.sisiId)) {
         return { ok: false, message: "Энэ SISI ID бүртгэлтэй байна." }
       }
-      setUsers((prev) => prev.map((u) => (u.id === currentUser.id ? { ...u, ...next } : u)))
+
+      setUsers((prev) =>
+        prev.map((u) => (u.id === currentUser.id ? { ...u, ...next } : u)),
+      )
+
       setCurrentUser((prev) => (prev ? { ...prev, ...next } : prev))
+
       return { ok: true }
     },
-    [currentUser, users]
+    [currentUser, users],
   )
 
-  const getUserById = React.useCallback((id: string) => users.find((u) => u.id === id), [users])
+  const getUserById = React.useCallback(
+    (id: string) => users.find((u) => u.id === id),
+    [users],
+  )
 
   const value = React.useMemo<AppContextValue>(
     () => ({
@@ -412,14 +581,15 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
       withdrawals,
       currentUser,
       rewardEligibilities,
+      verifiedPostIds,
       login,
       signup,
       logout,
       addPost,
       updatePostStatus,
+      deletePost,
       verifyFoundAnswer,
       verifyLostAnswer,
-      verifiedPostIds,
       submitClaim,
       approveClaim,
       rejectClaim,
@@ -437,14 +607,15 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
       withdrawals,
       currentUser,
       rewardEligibilities,
+      verifiedPostIds,
       login,
       signup,
       logout,
       addPost,
       updatePostStatus,
+      deletePost,
       verifyFoundAnswer,
       verifyLostAnswer,
-      verifiedPostIds,
       submitClaim,
       approveClaim,
       rejectClaim,
@@ -454,7 +625,7 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
       completeWithdrawal,
       updateCurrentUserProfile,
       getUserById,
-    ]
+    ],
   )
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>
@@ -462,6 +633,10 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
 
 export function useAppStore() {
   const ctx = React.useContext(AppContext)
-  if (!ctx) throw new Error("useAppStore must be used within AppStoreProvider")
+
+  if (!ctx) {
+    throw new Error("useAppStore must be used within AppStoreProvider")
+  }
+
   return ctx
 }

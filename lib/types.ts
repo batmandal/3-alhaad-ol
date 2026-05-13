@@ -1,5 +1,10 @@
 export type PostType = "lost" | "found"
-export type PostStatus = "draft" | "pending_payment" | "published" | "rejected"
+export type PostStatus =
+  | "draft"
+  | "pending_payment"
+  | "published"
+  | "rejected"
+  | "resolved"
 
 export interface VerificationQuestion {
   question: string

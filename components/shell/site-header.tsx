@@ -38,6 +38,7 @@ export function SiteHeader() {
             3 Алхаад ол
           </span>
         </Link>
+
         <nav className="flex items-center gap-2">
           {currentUser?.isAdmin && (
             <Link
@@ -50,6 +51,7 @@ export function SiteHeader() {
               Админ
             </Link>
           )}
+
           {currentUser ? (
             <>
               <Link
@@ -59,8 +61,19 @@ export function SiteHeader() {
                   "font-medium transition-all duration-300 hover:bg-teal-50 hover:text-teal-600 active:scale-95 dark:hover:bg-teal-950/30",
                 )}
               >
+                Миний зарууд
+              </Link>
+
+              <Link
+                href="/profile"
+                className={cn(
+                  buttonVariants({ variant: "ghost", size: "default" }),
+                  "font-medium transition-all duration-300 hover:bg-teal-50 hover:text-teal-600 active:scale-95 dark:hover:bg-teal-950/30",
+                )}
+              >
                 {currentUser.name}
               </Link>
+
               <Button
                 variant="outline"
                 size="default"
@@ -88,12 +101,14 @@ export function SiteHeader() {
               >
                 Нэвтрэх
               </DialogTrigger>
+
               <DialogContent className={authDialogContentClassName}>
                 <DialogHeader className="space-y-1 text-left">
                   <DialogTitle className={authDialogTitleClassName}>
                     {authMode === "login" ? "Нэвтрэх" : "Бүртгүүлэх"}
                   </DialogTitle>
                 </DialogHeader>
+
                 {authMode === "login" ? (
                   <LoginForm
                     onSuccess={() => setAuthOpen(false)}
