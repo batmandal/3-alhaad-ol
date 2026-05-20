@@ -7,6 +7,8 @@ const { notFound, errorHandler } = require("./middleware/errorHandler")
 
 const app = express()
 
+app.set("trust proxy", 1)
+
 app.use(express.json({ limit: "1mb" }))
 app.use(
   cors({
@@ -14,7 +16,7 @@ app.use(
     credentials: true,
   })
 )
-app.use(morgan("dev"))
+app.use(morgan(process.env.NODE_ENV === "production" ? "tiny" : "dev"))
 
 app.get("/health", (req, res) => res.json({ ok: true, service: "lost-found-backend" }))
 
