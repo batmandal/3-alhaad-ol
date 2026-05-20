@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { API_BASE } from "@/lib/api"
 
 interface Post {
   id: string
@@ -18,7 +19,7 @@ export default function PostsLivePage() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    fetch("http://localhost:8080/api/posts")
+    fetch(`${API_BASE}/api/posts`)
       .then((res) => {
         if (!res.ok) throw new Error(`Серверийн алдаа: ${res.status}`)
         return res.json()
@@ -113,7 +114,7 @@ export default function PostsLivePage() {
         )}
 
         <footer className="mt-12 text-center text-xs text-gray-400">
-          Эх сурвалж: http://localhost:8080/api/posts (Express + MongoDB)
+          Эх сурвалж: {API_BASE}/api/posts (Express + MongoDB)
         </footer>
       </div>
     </main>

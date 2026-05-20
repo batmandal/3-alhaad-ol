@@ -4,6 +4,7 @@ import * as React from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { useAppStore } from "@/lib/store/app-store"
+import { API_BASE } from "@/lib/api"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
@@ -47,7 +48,7 @@ export function PostDetailClient({ id }: { id: string }) {
     // Try backend verification first (if available)
     const verifyWithBackend = async () => {
       try {
-        const response = await fetch(`http://localhost:8080/api/posts/${id}/verify`, {
+        const response = await fetch(`${API_BASE}/api/posts/${id}/verify`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ answer }),

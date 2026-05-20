@@ -29,6 +29,18 @@ const nextConfig: NextConfig = {
           port: '',
           pathname: '/**',
         },
+        {
+          protocol: 'https',
+          hostname: '*.trycloudflare.com',
+          port: '',
+          pathname: '/**',
+        },
+        {
+          protocol: 'https',
+          hostname: '*.amplifyapp.com',
+          port: '',
+          pathname: '/**',
+        },
       ],
     },
     
