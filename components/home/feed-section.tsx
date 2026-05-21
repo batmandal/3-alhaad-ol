@@ -179,15 +179,18 @@ function PostsCarousel({
 }) {
   const [swiper, setSwiper] = React.useState<SwiperType | null>(null);
   const [activeIndex, setActiveIndex] = React.useState(0);
+  const [isBeginning, setIsBeginning] = React.useState(true);
+  const [isEnd, setIsEnd] = React.useState(false);
 
   React.useEffect(() => {
-    setSwiper(null);
     setActiveIndex(0);
+    setIsBeginning(true);
+    setIsEnd(false);
   }, [resetKey]);
 
   const canNavigate = posts.length > 1;
-  const canPrev = swiper ? !swiper.isBeginning : false;
-  const canNext = swiper ? !swiper.isEnd : canNavigate;
+  const canPrev = canNavigate && !isBeginning;
+  const canNext = canNavigate && !isEnd;
 
   return (
     <div className="relative py-2">
@@ -245,8 +248,16 @@ function PostsCarousel({
             clickable: true,
             dynamicBullets: true,
           }}
-          onSwiper={setSwiper}
-          onSlideChange={(s) => setActiveIndex(s.activeIndex)}
+          onSwiper={(s) => {
+            setSwiper(s);
+            setIsBeginning(s.isBeginning);
+            setIsEnd(s.isEnd);
+          }}
+          onSlideChange={(s) => {
+            setActiveIndex(s.activeIndex);
+            setIsBeginning(s.isBeginning);
+            setIsEnd(s.isEnd);
+          }}
           className="feed-posts-swiper w-full"
         >
           {posts.map((p) => (
